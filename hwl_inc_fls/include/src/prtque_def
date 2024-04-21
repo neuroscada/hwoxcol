@@ -1,0 +1,1378 @@
+
+/*              PRTQUE - alarm/event/report request queue to print manager */
+/*              ---------------------------------------------------------- */
+
+#if	!defined( PRQSZ )
+
+/*     REVISION: */
+/*         @(#)prtque_def main.SVR_MASTERPROJ_Integration.R0930_Int.19 */
+
+/*	This file contains EVTFIL structure. */
+/*	Programs including this file must also include EVTFIL_DEF. */
+
+#define	PRQSZ	(80+ALMEVTSZ) /*  must be multiple of 4 to maintain */
+/*                                                    ;* 64 bit allignment of pointers. */
+
+#include	"src/hsctypes_def"
+#include	"src/msgdir_def"
+
+#if	!defined( inside_IDL )
+
+/*         PRTQUE has a queue structure. There are 4 queue headers of */
+/*         length 6 words as follows: */
+
+/*                 word 1,2 - head pointer */
+/*                      3,4 - tail pointer */
+/*                        5 - lock */
+/*                        6 - length counter */
+
+#define	PRQ_FREE	0 /*  queue of available records */
+#define	PRQ_FIRE	1 /*  queue of fire alarms */
+#define	PRQ_ALARM	2 /*  queue of alarms */
+#define	PRQ_FILE	3 /*  queue of file prints */
+
+/*         The next record after the headers is the first data record. */
+/*	  It has the following general structure. */
+
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                        1,2 !   pointer to next frame       ! */
+/*                            --------------------------------- */
+/*                          3 !   frame priority              ! */
+/*                            --------------------------------- */
+/*                      4- 24 !   common data                 ! */
+/*                            --------------------------------- */
+/*                     25- 44 !   frame type specific data    ! */
+/*                            --------------------------------- */
+/*                     81-    !   EVTFIL structure            ! */
+/*                            --------------------------------- */
+
+
+
+/*         Common data: */
+
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                          4 !   CRT number                  ! */
+/*                            --------------------------------- */
+/*                          5 !   printer number              ! */
+/*                            --------------------------------- */
+/*                          6 !   PRTQUE packet type          ! */
+/*                            --------------------------------- */
+/*                          7 !   PRTQUE packet sub-type      ! */
+/*                            --------------------------------- */
+/*                          8 !M!L!K!J!I!H!   G   !F!E!D!C!B!A! */
+/*                            --------------------------------- */
+/*                      9, 10 !   cookie                      ! */
+/*                            --------------------------------- */
+/*                         11 !   remote state flags          ! */
+/*                            --------------------------------- */
+/*                         12 !   prtque flags 2              ! */
+/*                            --------------------------------- */
+/*                         13 !   remote state flags 2        ! */
+/*                            --------------------------------- */
+/*                         14 !   prtque flags 3              ! */
+/*                            --------------------------------- */
+/*                     15, 24 !   spare                       ! */
+/*                            --------------------------------- */
+
+
+#if	!defined(USE_DERIVED_TYPE)
+
+/* equivalences */
+
+/*       equivalence  (ALMEVTBUF,PRQBUF(81)) */
+/*       integer*2     PRQBUF(PRQSZ) */
+
+/*       integer*2     PRQFP, PRQCRT, PRQLPT, PRQBIAS, PRQEBIAS, PRQTYPE, PRQCATEGORY */
+/*       integer*2     PRQSUBTYP, PRQPRIORITY, PRQAREA, PRQFLAG, PRQSTAFLG, PRQFLAG2, PRQSTAFLG2, PRQFLAG3 */
+/*       type(HSCTIME) PRQTIME, PRQETIME */
+/*       integer*4	    PRQCOK, PRQHOLDERID */
+/*       character     PRQRSN$*(ALMEVTACCRSN_SZ) */
+/*       equivalence  (PRQFP      ,PRQBUF(3)) */
+/*       equivalence  (PRQCRT     ,PRQBUF(4)) */
+#define	PRQCRT_REMOTE	-1 /* the event came from a remote CRT, don't use the stn number */
+/*       equivalence  (PRQLPT     ,PRQBUF(5)) */
+/*       equivalence  (PRQTYPE    ,PRQBUF(6)) */
+/*       equivalence  (PRQSUBTYP  ,PRQBUF(7)) */
+/*       equivalence  (PRQBIAS    ,ALMEVTBUF(ALMEVTXBIAS)) */
+/*       equivalence  (PRQEBIAS    ,ALMEVTBUF(ALMEVTXEBIAS)) */
+/*       equivalence  (PRQTIME    ,ALMEVTBUF(ALMEVTXTIME)) */
+/*       equivalence  (PRQETIME   ,ALMEVTBUF(ALMEVTXETIME)) */
+/*       equivalence  (PRQPRIORITY,ALMEVTBUF(ALMEVTXPRI)) */
+/*       equivalence  (PRQFLAG    ,PRQBUF(8)) */
+/*       equivalence  (PRQCOK     ,PRQBUF(9)) */
+/*       equivalence  (PRQAREA    ,ALMEVTBUF(ALMEVTXACD)) */
+/*       equivalence  (PRQSTAFLG  ,PRQBUF(11)) */
+/*       equivalence  (PRQFLAG2   ,PRQBUF(12)) */
+/*       equivalence  (PRQSTAFLG2 ,PRQBUF(13)) */
+/*       equivalence  (PRQFLAG3   ,PRQBUF(14)) */
+/*       equivalence (PRQCATEGORY, ALMEVTBUF(ALMEVTXCAT)) */
+#endif	
+
+/*				Frame Priorities */
+
+#define	PRQFP_FREE	PRQ_FREE
+#define	PRQFP_FIRE	PRQ_FIRE
+#define	PRQFP_ALM	PRQ_ALARM
+#define	PRQFP_RPT	PRQ_FILE
+
+
+
+/*                               PRTQUE packet type */
+
+#define	PRQTYPE_EVENT	0  /*  event */
+#define	PRQTYPE_PLIMIT_ALM	1  /*  point limit alarm */
+#define	PRQTYPE_PSTATUS_ALM	2  /*  point status alarm */
+#define	PRQTYPE_PCONTROL_ALM	3  /*  point control alarm */
+#define	PRQTYPE_DELAY	4  /*  delay */
+#define	PRQTYPE_DRIVE_FAULT	5  /*  drive fault */
+#define	PRQTYPE_ACCESS_ALM	6  /*  access alarm */
+/*     integer(2),parameter:: PRQTYPE_SPARE              = 7  ;* SPARE, used to be PRQTYPE_ACCESS_STATE_ALM - access state alarm */
+#define	PRQTYPE_NOTIFICATION	8  /*  notification */
+#define	PRQTYPE_MSG_ALM	9  /*  general message alarm */
+#define	PRQTYPE_COMMS_ALM	10 /*  communications alarm */
+#define	PRQTYPE_AAT_CHANGE	11 /*  area assignment table changed */
+#define	PRQTYPE_PURE_TEXT	12 /*  pure text message */
+#define	PRQTYPE_FUNCTION	13 /*  function request */
+#define	PRQTYPE_GEN_LATCHED_ALM	14 /*  generic latched alarm */
+#define	PRQTYPE_SOE	15 /*  sequence of event (full text supplied) */
+#define	PRQTYPE_MSG	17 /*  message (full text supplied) */
+#define	PRQTYPE_MSG_ACK	18 /*  message acknowledge (full text supplied - oper may be inserted) */
+#define	PRQTYPE_MSG_CNF	19 /*  message confirmation (full text supplied - oper may be inserted) */
+#define	PRQTYPE_ALM_ACK	20 /*  alarm acknowledge (full text supplied - oper may be inserted) */
+#define	PRQTYPE_ALM_RSP	21 /*  alarm response (full text supplied - oper may be inserted) */
+#define	PRQTYPE_ALM_RST	22 /*  alarm reset (full text supplied - oper may be inserted) */
+#define	PRQTYPE_API_NOTIF	23 /*  api notification (full text supplied - oper may be inserted, can be alarm, SOE, or message dependent on category) */
+#define	PRQTYPE_NOTIF_COMMS	24 /*  communications alarm from GDA (ie. point server controller points) */
+#define	PRQTYPE_NOTIF_NONPNT	25 /*  non point alarm */
+#define	PRQTYPE_GEN_NONLATCHED_ALM	26 /*  generic nonlatched alarm */
+#define	PRQTYPE_MSG_CLR	27 /*  message clear (full text supplied - oper may be inserted) */
+#define	PRQTYPE_NOTIF_ASSOCPNT	28 /*  associated point alarm (mostly treated as a non-point alarm, however, will get deleted/disabled if the point is deleted/disabled) */
+
+
+
+/*				************************* */
+/*				* PRTQUE packet subtype * */
+/*				************************* */
+
+/*                                    PRQTYPE_EVENT */
+
+#define	PRQSUBTYP_DFD	0 /*  dfd */
+#define	PRQSUBTYP_TEXT	1 /*  text */
+
+#define	EVTSUB_ACTOR	1 /*  event subtype to not overwrite what is in the actor field */
+
+
+
+/*			          PRQTYPE_PLIMIT_ALM */
+
+/*     see DAT000_DEF ANA alarms */
+#define	PRQSUBTYP_RTU_IOCHANNEL	16    /*  RTU2020 I/O module channel in error */
+#define	PRQSUBTYP_RTU_WIFICOMMS	17    /*  RTU2020 wireless device offline */
+#define	PRQSUBTYP_PLC_CPU_FREE	18    /*  PLC minimum CPU free threshold reached */
+#define	PRQSUBTYP_PLC_TEMP_LO	19    /*  PLC enclosure temperature limit */
+#define	PRQSUBTYP_PLC_TEMP_HI	20    /*  PLC enclosure temperature limit */
+#define	PRQSUBTYP_PLC_EPM_STATUS	21    /*  PLC EPM in error */
+#define	PRQSUBTYP_PLC_IOSLOT	22    /*  PLC rack I/O module in error */
+#define	PRQSUBTYP_PLC_IOCHANNEL	23    /*  PLC rack I/O module channel in error */
+
+/*				  PRQTYPE_PSTATUS_ALM */
+
+/*     Note: For STAALM, (Status point alarms) the PRQSUBTYPE will be calculated from the value of the status point. */
+/*           The alarm type in the point will still be those documented in DAT000_DEF STA alarms */
+#define	PRQSUBTYP_STATE0	16   /*  state 0 */
+/*     integer(2),parameter:: PRQSUBTYP_STATE1 - 15   = 17 - 31   ;* reserved for state 1 to 15 */
+#define	PRQSUBTYP_RTU_IOMODULE	32    /*  RTU2020 I/O module offline */
+#define	PRQSUBTYP_RTU_WIFIBATTS	33    /*  RTU2020 wireless device battery low */
+#define	PRQSUBTYP_PLC_SYNC	34    /*  Redundant PLC not synchronized */
+#define	PRQSUBTYP_PLC_IP_CONFLICT_1	35    /*  PLC IP address conflict on Ethernet port 1 */
+#define	PRQSUBTYP_PLC_IP_CONFLICT_2	36    /*  PLC IP address conflict on Ethernet port 2 */
+#define	PRQSUBTYP_PLC_OPCUA_STATE	37    /*  PLC not running */
+#define	PRQSUBTYP_PLC_MSW_POSITION	38    /*  PLC mode switch not in running position */
+#define	PRQSUBTYP_PLC_MSW_REM_POSITION	39    /*  PLC mode switch in remote position */
+
+
+
+/*			          PRQTYPE_CONTROL_ALM */
+
+#define	PRQSUBTYP_FAIL	0 /*  fail */
+#define	PRQSUBTYP_AUTHORISED	1 /*  authorised */
+#define	PRQSUBTYP_EXT_CHANGE	2 /*  external cahnge */
+#define	PRQSUBTYP_CMD_DISAGREE	3 /*  command disagree (tdc) */
+
+
+/*				   PRQTYPE_DELAY */
+
+/*     type  4: 0 - invalid */
+/*	       1 - delay */
+/*	       2 - delay */
+/*	       3 - delay */
+/*	       4 - delay */
+/*	       5 - delay */
+/*	       6 - invalid */
+/*	       7 - feed */
+
+
+/*				  PRQTYPE_DRIVE_FAULT */
+/*     type  5: 0 - fault */
+/*              1 - fault */
+
+
+/*				  PRQTYPE_NOTIFICATION */
+
+/*     subtypes are unique per connection number */
+/*     for notifications on a TPS connection see notification.h (TPS-supplied include file for subtype codes) */
+/*     for notifications on a CDA connection see ??? */
+/*     for local notifications: */
+
+#define	PRQSUBTYP_EFM_REPEATFAIL_ALM	1 /*  EFM Mngr Out of repeats alarm */
+#define	PRQSUBTYP_EFM_DATACONVFAIL_ALM	2 /*  EFM Mngr Data conversion failed alarm */
+#define	PRQSUBTYP_EFM_DYNSCNOFF_ALM	3 /*  EFM Mngr Dynamic scanning not enabled for config log collection */
+#define	PRQSUBTYP_EFM_INVALID_ALM	4 /*  EFM Mngr Status of invalid alarm */
+#define	PRQSUBTYP_EFM_INVCONFIG_ALM	5 /*  EFM Mngr Status of invalid config alarm */
+#define	PRQSUBTYP_EFM_DX_EXP_FAIL_ALM	6 /*  EFM Data Export - Export failed */
+
+
+/*				  PRQTYPE_MSG_ALM */
+
+/*     When adding new subtypes also add them to "pcdm\data\SystemAlarms\SystemAlarms.xlsx" */
+
+#define	PRQSUBTYP_MA_BATCHRPT_STRT	1   /*  batch report run start (std/batchrpt/src/lottrk.c) */
+#define	PRQSUBTYP_MA_BATCHRPT_STOP	2   /*  batch report run stop  (std/batchrpt/src/lottrk.c) */
+#define	PRQSUBTYP_MA_BSI_SERVICE	3   /*  BSI service not running (std/bbbsi/src/bsiini.c) */
+#define	PRQSUBTYP_MA_DUAL_QOVRFLW	4   /*  dual queue overflow (std/clib/cdual/src/q_seg_wrt.c) */
+#define	PRQSUBTYP_MA_DUAL_FORCEOOS	5   /*  dual forced OOS (std/clib/cdual/src/q_seg_wrt.c) */
+#define	PRQSUBTYP_MA_DUAL_NEARFULL	6   /*  dual queue nearly full (std/clib/cdual/src/q_seg_wrt.c) */
+#define	PRQSUBTYP_MA_FILREP_TMCHG	7   /*  file replication scheduled time changed (std/clib/cmis/src/filereplib.cpp) */
+#define	PRQSUBTYP_MA_DNGL_EXPIRY	8   /*  dongle expiry (std/clib/cnt/src/dnglchk.c) */
+#define	PRQSUBTYP_MA_DNP3_DMNFAIL	10  /*  DNP3 daemon failed     (std/dnp/src/dnp_lib.c) */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                        = 11  ;* */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                        = 12  ;* */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                        = 13  ;* */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                        = 14  ;* */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                        = 15  ;* */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                        = 16  ;* */
+#define	PRQSUBTYP_MA_SQL_SYNCLOST	17  /*  SQL sync lost (std/events/evarch/arcevnts.c and std\events\eventsdb\src\eventsdb_api.c) */
+#define	PRQSUBTYP_MA_EXTALM	33  /*  checkbox changed (std/extalm/src/extalm.c) */
+#define	PRQSUBTYP_MA_FSC_COMMS	34  /*  FSC comms (std/fsc/src/fscinfoalm.c) */
+#define	PRQSUBTYP_MA_GDA_CONNECT	35  /*  GDA connection (std/gda/gdamngr/gdaclib.c) */
+#define	PRQSUBTYP_MA_GDA_LIC	36  /*  GDA license (std/gda/gdamngr/gdaconnectionmngr.cpp) */
+#define	PRQSUBTYP_MA_HSTBCK_CMPL	37  /*  History backfill complete (std/hstbck/src/raise_alarm_event.c) */
+#define	PRQSUBTYP_MA_HSTBCK_INCMPL	38  /*  History backfill incomplete (std/hstbck/src/raise_alarm_event.c) */
+#define	PRQSUBTYP_MA_HWSYSTEMDB	39  /*  SQL hwsystemdb (std/hwsystemdb/data/src/raisealarm.cpp) */
+#define	PRQSUBTYP_MA_NOTIF_DISCARD	40  /*  notification discard (std/notifmngr/src/notiflist.cpp) */
+#define	PRQSUBTYP_MA_WDT_RESTRT	41  /*  WDT process restart (std/nt/src/strt_das.c) */
+#define	PRQSUBTYP_MA_ODR_DEMAND	42  /*  ODR report (std/odr/core/src/crrpt.cpp) */
+#define	PRQSUBTYP_MA_ODR_PERIODIC	43  /*  ODR report (std/odr/core/src/crrpt.cpp) */
+#define	PRQSUBTYP_MA_OMNI_SYNC	44  /*  Omni (std/omni/src/omnio.c) */
+#define	PRQSUBTYP_MA_SCANX_INTOVL	45  /*  Scanx interval overload (std/scanx/src/scanx.cpp) */
+#define	PRQSUBTYP_MA_SCRIPT_ENG	46  /*  Scripting engine (std/scripting/scriptmanager/src/cscriptmanager.cpp) */
+#define	PRQSUBTYP_MA_TBLCUR_PRINTFAIL	47  /*  Table cursor print fail (std/tblcursor/src/activitycursor.cpp) */
+#define	PRQSUBTYP_MA_UMAXSP_DWNLOAD	48  /*  Umaxsp (std/umax/umaxsp/src/rcpio.c) */
+#define	PRQSUBTYP_MA_UMAXSP_START	49  /*  Umaxsp (std/umax/umaxsp/src/appstate.c) */
+#define	PRQSUBTYP_MA_UMAXSP_RESET	50  /*  Umaxsp (std/umax/umaxsp/src/appstate.c) */
+#define	PRQSUBTYP_MA_UMAXSP_HOLD	51  /*  Umaxsp (std/umax/umaxsp/src/appstate.c) */
+#define	PRQSUBTYP_MA_UMAXSP_ADV	52  /*  Umaxsp (std/umax/umaxsp/src/appstate.c) */
+#define	PRQSUBTYP_MA_UMAXSP_JOG	53  /*  Umaxsp (std/umax/umaxsp/src/appstate.c) */
+#define	PRQSUBTYP_MA_UMODBUS_INIT	54  /*  Umodbus (std/umodbus/scantask/hstbckutil.cpp) */
+#define	PRQSUBTYP_MA_UMODBUS_FAIL	55  /*  Umodbus (std/umodbus/scantask/hstbckutil.cpp) */
+#define	PRQSUBTYP_MA_UMCSPP_HIGH	56  /*  Umodbus (std/umodbus/umcspp/umc_alarm.c) */
+#define	PRQSUBTYP_MA_UMCSPP_LOW	57  /*  Umodbus (std/umodbus/umcspp/umc_alarm.c) */
+#define	PRQSUBTYP_MA_UMCSPP_JNRL	58  /*  Umodbus (std/umodbus/umcspp/umc_alarm.c) */
+#define	PRQSUBTYP_MA_ZONE_DEF	59  /*  Zone definition (std/utility/src/changezone.cpp) */
+#define	PRQSUBTYP_MA_DSA_SYNC	60  /*  Zone definition (std/utility/src/dsasync.cpp) */
+#define	PRQSUBTYP_MA_UTILTSK_FAIL	61  /*  Utiltask (std/utility/src/utiltask.cpp) */
+#define	PRQSUBTYP_MA_UTILTSK_CANCEL	62  /*  Utiltask (std/utility/src/utiltask.cpp) */
+#define	PRQSUBTYP_MA_UTILTSK_ACTIVE	63  /*  Utiltask (std/utility/src/utiltask.cpp) */
+#define	PRQSUBTYP_MA_ARCHIV_ALM	65  /*  History Archiving std\utility\src\hstmove.c) */
+#define	PRQSUBTYP_MA_TIMER_LIC	66  /*  Timer test licence std\core\src\timer.f) */
+#define	PRQSUBTYP_MA_PNTBLD_DEL	67  /*  Point deleted (std\utility\src\pntbld.f) */
+#define	PRQSUBTYP_MA_PNTBLD_MOD	68  /*  Point modified (std\utility\src\pntbld.f) */
+#define	PRQSUBTYP_MA_PNTBLD_ADD	69  /*  Point added (std\utility\src\pntbld.f) */
+#define	PRQSUBTYP_MA_FSC	70  /*  FSC (std\fsc\src\sertype.c) */
+#define	PRQSUBTYP_MA_GCOS_FAILED	71  /*  GCOS FAILED (std\gcos\src\mnt_f.c) */
+#define	PRQSUBTYP_MA_GCOS	72  /*  GCOS (std\gcos\src\time_zone.c) */
+#define	PRQSUBTYP_MA_HWSYSTEMDB_SYNCH_FAILED	73  /*  HWSYSTEMDB redundant synch failed (std\hwsystemdb\src\hwsystemdb_xp.c) */
+#define	PRQSUBTYP_MA_PRIORITY_ELEVATING	75  /*  Notifmngr - priority elevating (std\notifmng\src\notiflist.cpp) */
+#define	PRQSUBTYP_MA_ULRESOUND	76  /*  Notifmngr - UL resound (std\notifmng\src\notiflist.cpp) */
+#define	PRQSUBTYP_MA_DEVELOP_ENABLED	77  /*  NT - Development mode enabled (std\nt\src\ser_stdm.cpp) */
+#define	PRQSUBTYP_MA_PAGER_SUCCESS	78  /*  pager (std\pager\src\dbdataaccess.cpp) */
+#define	PRQSUBTYP_MA_PAGER_FAILED	79  /*  pager (std\pager\src\dbdataaccess.cpp) */
+#define	PRQSUBTYP_MA_PAGER_CHANGE	80  /*  pager (std\pager\src\dbdataaccess.cpp) */
+#define	PRQSUBTYP_MA_WDT_PSW00	81  /*  Peripheral switch request (std/core/src/wdt.cpp) */
+#define	PRQSUBTYP_MA_WDT_FAILED	82  /*  Task failed (std/core/src/wdt.cpp) */
+#define	PRQSUBTYP_MA_CONFIG_MISMATCH	84  /*  Config mismatch (std\config\src\tdcfld.f) */
+#define	PRQSUBTYP_MA_SCAN_OVERLOAD	85  /*  Scan overload (std\scan\src\overload.cpp) */
+#define	PRQSUBTYP_MA_EXTALM_FAIL	86  /*  alarm notification - fail (std/extalm/src/extalm.c) */
+#define	PRQSUBTYP_MA_TIMER_EVENT_STARTING	88  /*  Timer events (std\core\src\timer.f) */
+#define	PRQSUBTYP_MA_TIMER_EVENT_CHANGED	89  /*  Timer events (std\core\src\timer.f) */
+#define	PRQSUBTYP_MA_REPLICATION	90  /*  (std/filereplication/src/monitor.c) */
+#define	PRQSUBTYP_MA_SERVICE_FRMWRK	91  /*  (std/ServiceFramework/ServiceFrameworkAlmUtil/ServiceFrameworkAlmUtil.cpp) */
+#define	PRQSUBTYP_MA_DATABLD_IMPORT	92  /*  databld xml import (std/databld/src/xmlreader.cpp) */
+#define	PRQSUBTYP_MA_DNP3_FUNC	93  /*  DNP3 FUNC condition    (std/dnp/src/dnp_lib.c) */
+#define	PRQSUBTYP_MA_DNP3_UNKNOBJ	94  /*  DNP3 UNKNOBJ condition (std/dnp/src/dnp_lib.c) */
+#define	PRQSUBTYP_MA_DNP3_PARAM	95  /*  DNP3 PARAM condition   (std/dnp/src/dnp_lib.c) */
+#define	PRQSUBTYP_MA_DNP3_SCAN	96  /*  DNP3 SCAN condition    (std/dnp/src/dnp_lib.c) */
+#define	PRQSUBTYP_MA_DNP3_BUFFER	97  /*  DNP3 BUFFER condition  (std/dnp/src/dnp_lib.c) */
+#define	PRQSUBTYP_MA_DNP3_HSTBCK	98  /*  DNP3 HSTBCK condition  (std/dnp/src/dnp_lib.c) */
+#define	PRQSUBTYP_MA_DNP3_DNP	99  /*  DNP3 DNP condition     (std/dnp/src/dnp_lib.c) */
+#define	PRQSUBTYP_MA_EVARCH_LOG	100 /*  Event archive log (std/events/evarch/logevent.cpp) */
+#define	PRQSUBTYP_MA_DNP	101 /*  DNP (std\dnp\src\dnppoll.f) */
+#define	PRQSUBTYP_MA_RECIPE	102 /*  Recipe (std\recipe\src\recipe.f) */
+#define	PRQSUBTYP_MA_SDLPR_EVENT	103 /*  SDLPR (std\core\src\sdlpr.f) */
+#define	PRQSUBTYP_MA_SDLPR_FAILURE	104 /*  SDLPR (std\core\src\sdlpr.f) */
+#define	PRQSUBTYP_MA_UMAX	105 /*  UMAX (std\umax\src\update_rtu.f) */
+#define	PRQSUBTYP_MA_TDC	106 /*  TDC (std\tdc\src\tdcalm.f) */
+#define	PRQSUBTYP_MA_HDWBLD	107 /*  HDWBLD (std\utility\src\hdwbld.f) */
+#define	PRQSUBTYP_MA_ALGO_ERROR	108 /*  Algo (std\scan\src) */
+#define	PRQSUBTYP_MA_ALGO_EVENT	109 /*  Algo (std\scan\src) */
+#define	PRQSUBTYP_MA_ODBC_RPT	110 /*  ODBC RPT (std\odbcrpt\src) */
+#define	PRQSUBTYP_MA_UNANSWERED	111 /*  Unanswered alarm (std\notifmngr\src) */
+#define	PRQSUBTYP_MA_PEER_HOST_NAME	112 /*  Can't resolve peer host name (std/dual_link/src) */
+#define	PRQSUBTYP_MA_TIMER_PARANOID	113 /*  Paranoid set reminder (std\core\src\timer.f) */
+#define	PRQSUBTYP_MA_PCSC_SYSTEM_FAULT	114 /*  PCSC Controller system fault (std\ulp\src\ulpexc.f) */
+#define	PRQSUBTYP_MA_PCSC_CARD_TROUBLE	115 /*  PCSC Controller card trouble (std\ulp\src\ulpexc.f) */
+#define	PRQSUBTYP_MA_PCSC_SYSTEM_RESTART	116 /*  PCSC Controller system restart (std\ulp\src\ulpexc.f) */
+#define	PRQSUBTYP_MA_PCSC_DATABASE_CORRUPT	117 /*  PCSC Controller database corrupt (std\ulp\src\ulpexc.f) */
+#define	PRQSUBTYP_MA_PCSC_INVALID_HISCODE	118 /*  PCSC Controller invalid history code (std\ulp\src\ulpexc.f) */
+#define	PRQSUBTYP_MA_SE_EVENT_MISSED	119 /*  SE Controller event(s) missed (std\slgscn\src\slgscn.f) */
+#define	PRQSUBTYP_MA_SE_UNKNOWN_LOG_CODE	120 /*  SE Controller event(s) missed (std\slgscn\src\slgscn.f) */
+#define	PRQSUBTYP_MA_SE_DEVICE_EVENT	121 /*  SE Controller device event (std\slgscn\src\slgscn.f) */
+#define	PRQSUBTYP_MA_TCOM_NOTACCESS_EVENT	122 /*  TECOM Controller non access event (std\tecom\src\tcmexc.c) */
+#define	PRQSUBTYP_MA_ARCHIV_ACCESSDENIED_ALM	123 /*  History Archiving access denied (std\utility\src\hstmove.c) */
+#define	PRQSUBTYP_MA_ARCHIV_INVALIDPATH_ALM	124 /*  History Archiving invalid path (std\utility\src\hstmove.c) */
+#define	PRQSUBTYP_MA_ARCHIV_DISKFULL_ALM	125 /*  History Archiving disk full (std\utility\src\hstmove.c) */
+
+
+#define	PRQSUBTYP_MA_XL500_COMMS_J	500 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_COMMS_L	501 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_COMMS_H	502 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_SCHED_J	503 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_SCHED_L	504 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_SETUP	505 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_DIALUP	506 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_DNLOAD_J	507 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_DNLOAD_L	508 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_UPLOAD_J	509 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_UPLOAD_L	510 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_START_J	511 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_START_L	512 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_STOP_J	513 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_STOP_L	514 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_DECODE	515 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_NO_RESPONSE	516 /*  Excel 500 (std/excel_500/src) */
+#define	PRQSUBTYP_MA_XL500_PNT_NOT_FOUND	517 /*  Excel 500 (std/excel_500/src) */
+
+/*                                                                   1010-1020 are reserved for OPC Integrator */
+#define	PRQSUBTYP_MA_OPCI_DEFAULT	1010/*  Default */
+#define	PRQSUBTYP_MA_OPCI_WATCHDOG_ERROR	1011/*  Failed to Start Watchdog Timer */
+#define	PRQSUBTYP_MA_OPCI_GROUP_FAIL	1012/*  Group Failure */
+#define	PRQSUBTYP_MA_OPCI_GROUP_MARGINAL	1013/*  Group Marginal */
+#define	PRQSUBTYP_MA_OPCI_GROUP_WRITE_FAILURE	1014/*  Group Write Failure */
+#define	PRQSUBTYP_MA_OPCI_GROUP_PARTIAL_WRITE_FAILURE	1015/*  Partial Group Write Failure */
+#define	PRQSUBTYP_MA_OPCI_ITEM_WRITE_FAILURE	1016/*  Item Write Failure */
+#define	PRQSUBTYP_MA_OPCI_GROUP_CONFIG_MISMATCH	1017/*  Invalid Data Received from OPC Server */
+#define	PRQSUBTYP_MA_OPCI_SRC_SERVER_FAIL	1018/*  Source OPC Server Failure */
+#define	PRQSUBTYP_MA_OPCI_DST_SERVER_FAIL	1019/*  Destination OPC Server Failure */
+
+
+
+/*				  PRQTYPE_COMMS_ALM */
+
+/*     When adding new subtypes also add them to "pcdm\data\SystemAlarms\ServerSystemAlarms.xml" */
+
+#define	PRQSUBTYP_FAIL_ALM	0  /*  fail alarm */
+#define	PRQSUBTYP_DIAG_ALM	1  /*  diagnostic alarm */
+#define	PRQSUBTYP_REDUNDANCY_ALM	2  /*  redundancy alarm */
+#define	PRQSUBTYP_CHKSUM_ALM	3  /*  RTU2020 checksum mismatch alarm */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                                    = 4  ;* SPARE, used to be PRQSUBTYP_MSLINKD_ALM - "MultiServer link daemon connection fail" */
+#define	PRQSUBTYP_MSDATOVL_ALM	5  /*  MultiServer data server overload */
+#define	PRQSUBTYP_MSNOTOVL_ALM	6  /*  MultiServer notification server overload */
+#define	PRQSUBTYP_MSDATCON_ALM	7  /*  MultiServer data connection fail */
+#define	PRQSUBTYP_MSNOTCON_ALM	8  /*  MultiServer notification connection fail */
+#define	PRQSUBTYP_MARG_ALM	9  /*  marginal alarm */
+#define	PRQSUBTYP_MSTAGERR_ALM	10 /*  MultiServer tag synching error alarm */
+#define	PRQSUBTYP_LSGEN_ALM	11 /*  Life safety general purpose controller alarm (EBI use only) */
+#define	PRQSUBTYP_SR_ALM	12 /*  System Repository alarm */
+#define	PRQSUBTYP_MSLINKD_ALM	13 /*  MultiServer link daemon connection fail - primary */
+#define	PRQSUBTYP_REDUNDANCY_DATABASE_LARGER_ALM	14 /*  Backup point database larger */
+#define	PRQSUBTYP_REDUNDANCY_INCONSISTENCY_ALM	15 /*  Backup inconsistency detected */
+#define	PRQSUBTYP_REDUNDANCY_BACKUP_STARTING_ALM	16 /*  Backup server error starting */
+#define	PRQSUBTYP_REDUNDANCY_SERVER_ALM	17 /*  Redundant server up/down */
+#define	PRQSUBTYP_REDUNDANCY_VER_ALM	18 /*  Peer version match */
+#define	PRQSUBTYP_REDUNDANCY_LINK_ALM	19 /*  Link up/down */
+#define	PRQSUBTYP_REDUNDANCY_NO_LINK_ALM	20 /*  No links available */
+#define	PRQSUBTYP_REDUNDANCY_SYNC_LOST_ALM	21 /*  Synchronization */
+#define	PRQSUBTYP_REDUNDANCY_DUAL_QUEUE_OVERFLOW_ALM	22 /*  Dual queue overflow */
+
+
+
+/*				    PRQTYPE_FUNCTION */
+
+#define	PRQSUBTYP_DISABLE_SYSTEM	1  /*  disable system alarms function */
+#define	PRQSUBTYP_DISABLE_AREA	2  /*  disable area alarms function */
+#define	PRQSUBTYP_DISABLE_EE	3  /*  disable EE alarms function */
+#define	PRQSUBTYP_DISABLE_POINT	4  /*  disable point alarms function */
+#define	PRQSUBTYP_RECOVERY_BEGIN	5  /*  TPS recovery begin function */
+#define	PRQSUBTYP_RECOVERY_END	6  /*  TPS recover end */
+#define	PRQSUBTYP_DEL_NOTIF_POINT	7  /*  Delete all alarms belonging to a point */
+#define	PRQSUBTYP_GDA_REC_BEGIN	8  /*  GDA recovery begin (for both area and asset based recoveries) */
+#define	PRQSUBTYP_GDA_REC_END	9  /*  GDA recovery end (for both area and asset based recoveries) */
+#define	PRQSUBTYP_PNT_REC_BEGIN	10 /*  point recovery begin */
+#define	PRQSUBTYP_PNT_REC_END	11 /*  point recovery end */
+#define	PRQSUBTYP_BB_REC_BEGIN	12 /*  BB recovery begin */
+#define	PRQSUBTYP_BB_REC_END	13 /*  BB recovery end */
+#define	PRQSUBTYP_DISABLE_BB	14 /*  disable BB alarms */
+#define	PRQSUBTYP_CHANGE_QUALITY	15 /*  change quality of all alarms with the specified criteria */
+/*     16 spare */
+/*     17 spare */
+#define	PRQSUBTYP_SILENCE	18 /*  Silence request from GDA (pointserver (TPN)) */
+#define	PRQSUBTYP_DISABLE_CON	19 /*  Disable alarms on a connection */
+#define	PRQSUBTYP_VALIDATE_ALMMSG	20 /*  Validate area of alarms and messages */
+#define	PRQSUBTYP_TPN_SYS_BLINK	21 /*  TPN system status LED - blink */
+#define	PRQSUBTYP_TPN_SYS_ON	22 /*  TPN system status LED - on */
+#define	PRQSUBTYP_TPN_SYS_OFF	23 /*  TPN system status LED - off */
+#define	PRQSUBTYP_TPN_CON_BLINK	24 /*  TPN console status LED - blink */
+#define	PRQSUBTYP_TPN_CON_ON	25 /*  TPN console status LED - on */
+#define	PRQSUBTYP_TPN_CON_OFF	26 /*  TPN console status LED - off */
+
+/*				    PRQSUBTYP_DISABLE_POINT par4 values (masks) */
+
+#define	PRQSUBTYP_DISABLE_POINT_ENB	1  /*  0=disable 1=enable */
+#define	PRQSUBTYP_DISABLE_POINT_ALM	2  /*  1=ALMINH changed */
+#define	PRQSUBTYP_DISABLE_POINT_SCAN	4  /*  1=ONSCAN changed */
+#define	PRQSUBTYP_DISABLE_POINT_DEL	8  /*  1=due to a point delete */
+#define	PRQSUBTYP_DISABLE_POINT_JRN	16 /*  1=JRNONLY changed */
+
+
+/*				  PRQTYPE_GEN_LATCHED_ALM */
+
+/*     When adding new subtypes also add them to "pcdm\data\SystemAlarms\ServerSystemAlarms.xml" */
+
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                    = 0  ;* SPARE, used to be PRQSUBTYP_REMSRV_CNCT_ALM - "remote server connection fail alarm" */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                    = 1  ;* SPARE, used to be PRQSUBTYP_REMSRV_AREA_ALM - "remote server area fail alarm" */
+#define	PRQSUBTYP_EVARCH_TIME_ALM	2  /*  event archiving alarm - time to archive */
+#define	PRQSUBTYP_EVARCH_SYNCH_ALM	3  /*  event archiving alarm - archive synch */
+#define	PRQSUBTYP_EVARCH_ALM	4  /*  event archiving alarm */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                    = 5  ;* SPARE, used to be PRQSUBTYP_REMSRV_ALMDSB_ALM - "Remote Server Alarm Disabled Server-wide" */
+#define	PRQSUBTYP_DIRECTSTN_ALM	6  /*  Direct Station alarm */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                    = 7  ;* SPARE, used to be PRQSUBTYP_DSACKSYNC_ALM - "Direct Station Acknowledgement Synchronisation alarm" */
+#define	PRQSUBTYP_ESIG_DISABLE	8  /*  electronic signature disable by area alarm */
+#define	PRQSUBTYP_CHN_SIM_MODE_ALM	9  /*  A channel in simulation mode alarm - 1 alarm for all channels */
+#define	PRQSUBTYP_XLS_LANIF_ALM	10 /*  XLS LAN Interface failure alarm (EBI use only) */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                    = 11 ;* SPARE, used to be OPCI */
+#define	PRQSUBTYP_ARCHIV_ALM	12 /*  Archiving alarm - failed to archive history */
+#define	PRQSUBTYP_CONSOLE_FAIL_ALM	13 /*  Console Failed Alarm */
+#define	PRQSUBTYP_CONSOLE_MARGINAL_ALM	14 /*  Console Marginal Alarm */
+#define	PRQSUBTYP_ORPHAN_ACTIVITY_ALM	15 /*  Orphan activity alarm */
+#define	PRQSUBTYP_PRINTER_FAIL_ALM	16 /*  Printer Fail Alarm */
+#define	PRQSUBTYP_DIRECTSTN_CLIENT_ALM	17 /*  Direct Station Extension alarm */
+#define	PRQSUBTYP_RUNCOUNT_ALM	18 /*  Run Count licence limit exceeded alarm */
+#define	PRQSUBTYP_EHM_ALM	19 /*  Exception History Manager alarm */
+#define	PRQSUBTYP_STATION_ALM	20 /*  Station alarm */
+#define	PRQSUBTYP_CON_ASSET_DISABLE_SYNCH_ALM	21 /*  Console Asset Alarm Disable TPS synch alarm */
+#define	PRQSUBTYP_CON_AREA_SYNCH_ALM	22 /*  Console Area TPS synch alarm */
+#define	PRQSUBTYP_EFM_PERSISTFAIL_ALM	23 /*  EFM Mngr Persist failed alarm */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                    = 24 ;* SPARE */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                    = 25 ;* SPARE */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                    = 26 ;* SPARE */
+#define	PRQSUBTYP_EFM_DX_LOCNVAL_ALM_CSV	27 /*  EFM Data Export - Location Validation failed for CSV */
+#define	PRQSUBTYP_EFM_DX_AGECHK_ALM_CSV	28 /*  EFM Data Export - Data aging failed for CSV */
+#define	PRQSUBTYP_EFM_DX_LOCNVAL_ALM_CFX	29 /*  EFM Data Export - Location Validation failed for CFX */
+#define	PRQSUBTYP_EFM_DX_AGECHK_ALM_CFX	30 /*  EFM Data Export - Data aging failed for CFX */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                    = 31 ;* SPARE */
+#define	PRQSUBTYP_EFM_TAMPER_ALM	32 /*  EFM Mngr Tamper detected alarm */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                    = 33 ;* SPARE */
+#define	PRQSUBTYP_SAM_CONN_FAILED	34 /*  SAM connection failed */
+
+/*                                                                 110-120 are reserved for OPC Integrator */
+#define	PRQSUBTYP_OPCI_DEFAULT	110/*  Default */
+#define	PRQSUBTYP_OPCI_WATCHDOG_ERROR	111/*  Failed to Start Watchdog Timer */
+#define	PRQSUBTYP_OPCI_GROUP_FAIL	112/*  Group Failure */
+#define	PRQSUBTYP_OPCI_GROUP_MARGINAL	113/*  Group Marginal */
+#define	PRQSUBTYP_OPCI_GROUP_WRITE_FAILURE	114/*  Group Write Failure */
+#define	PRQSUBTYP_OPCI_GROUP_PARTIAL_WRITE_FAILURE	115/*  Partial Group Write Failure */
+#define	PRQSUBTYP_OPCI_ITEM_WRITE_FAILURE	116/*  Item Write Failure */
+#define	PRQSUBTYP_OPCI_GROUP_CONFIG_MISMATCH	117/*  Invalid Data Received from OPC Server */
+#define	PRQSUBTYP_OPCI_SRC_SERVER_FAIL	118/*  Source OPC Server Failure */
+#define	PRQSUBTYP_OPCI_DST_SERVER_FAIL	119/*  Destination OPC Server Failure */
+
+/*                                                                 200-220 are reserved for License Service */
+#define	PRQSUBTYP_LS_NOLICENSE	200 /*  License Service - No license */
+#define	PRQSUBTYP_LS_PENDINGLICENSE	201 /*  License Service - Pending license requires restart */
+
+
+/*                                                                 300-320 are reserved for scripting */
+#define	PRQSUBTYP_SCRIPTING_ENG_BASE	300/*  server scripting engine timeout/error base subtype */
+#define	PRQSUBTYP_SCRIPTING_ENG_AUTO	300/*  server scripting auto engine timeout/error subtype */
+#define	PRQSUBTYP_SCRIPTING_ENG_MAN_BASE	305/*  server scripting manual engine timeout/error base subtype */
+#define	PRQSUBTYP_SCRIPTING_ENG_MAX	319/*  server scripting engine timeout/error max subtype */
+
+/*                                                                 900-999 are reserved for file replication */
+#define	PRQSUBTYP_FILE_REP_BASE	900/*  file replication base subtype */
+#define	PRQSUBTYP_FILE_REP_MAX	999/*  file replication max subtype */
+
+
+/*				  PRQTYPE_GEN_NONLATCHED_ALM */
+
+/*     When adding new subtypes also add them to "pcdm\data\SystemAlarms\ServerSystemAlarms.xml" */
+
+#define	PRQSUBTYP_STATION_LOGIN_ALM	1 /*  Station Login Alarm */
+/*     integer(2),parameter:: PRQSUBTYP_SPARE                = 2 ;* SPARE, used to be PRQSUBTYP_PRINTER_MARG_ALM - Station Failure Alarm */
+#define	PRQSUBTYP_PRINTER_MARG_ALM	3 /*  Printer Marginal Alarm */
+#define	PRQSUBTYP_ESIG_FAIL_ALM	4 /*  eSig Alarm */
+#define	PRQSUBTYP_DUPLICATE_PNT_ALM	5 /*  duplicate point alarm */
+#define	PRQSUBTYP_STATION_LOCKOUT_ALM	6 /*  Station Lockout Alarm */
+
+
+/*				************ */
+/*				* Priority * */
+/*				************ */
+
+#define	PRQPRI_MASK	0x00F0	
+#define	PRQPRI_OFFSET	4
+#define	PRQPRI_WIDTH	4
+#define	PRQSUBPRI_MASK	0x000F	
+#define	PRQSUBPRI_WIDTH	4
+#define	PRQPRI_SIMPLE_MASK	0x0030	
+#define	PRQSUBPRI_OFFSET	0
+
+#define	PRQPRI_LOG	0  /*  log only alarms */
+#define	PRQPRI_LOW	1  /*  low priority alarms */
+#define	PRQPRI_HIGH	2  /*  high priroity alarms */
+#define	PRQPRI_URGENT	3  /*  urgent priority alarms */
+#define	PRQPRI_CRITICAL	4  /*  critical priority alarms */
+/*     integer(2),parameter:: PRQPRI_              = 5  ;* reserved for a future alarm priority */
+#define	PRQPRI_OP_CHANGE	6  /*  operator changes */
+#define	PRQPRI_REM_OP_CHANGE	7  /*  remote operator changes */
+#define	PRQPRI_NONE	8  /*  no priority (used by CDA) */
+#define	PRQPRI_LOW_MSG	13 /*  low priority messages */
+#define	PRQPRI_HIGH_MSG	14 /*  high priority messages */
+#define	PRQPRI_URGENT_MSG	15 /*  urgent priority messages */
+
+#define	PRQSUBPRI_MIN	0  /*  lowest sub-priority */
+#define	PRQSUBPRI_MAX	15 /*  highest sub-priority */
+#define	PRQSUBPRI_REMAP_TO_CRITICAL	15 /*  subpriority of urgent alarms to remap to critical if enabled */
+
+
+/*                               *********** */
+/*                               * flags 1 * */
+/*                               *********** */
+
+/*                               A - alarm return to normal */
+#define	PRQ_ALARM_RTN_MASK	0x0001	 /*  field mask */
+#define	PRQ_ALARM_RTN	0x0001	 /*  alarm returned to normal */
+#define	PRQ_ALARM_RTN_BIT	0       /*  bit position */
+
+/*				B - auto return to normal */
+#define	PRQ_AUTO_RTN_MASK	0x0002	 /*  field mask */
+#define	PRQ_AUTO_RTN	0x0002	 /*  alarm is automatically rtn */
+#define	PRQ_AUTO_RTN_BIT	1       /*  bit position */
+
+/*				C - significant change alarm */
+#define	PRQ_SIG_CHG_MASK	0x0004	 /*  field mask */
+#define	PRQ_SIG_CHG	0x0004	 /*  alarm is a significant change alarm */
+#define	PRQ_SIG_CHG_BIT	2       /*  bit position */
+
+/*				D - suppress event reporting */
+#define	PRQ_SPRS_EVT_MASK	0x0008	 /*  field mask */
+#define	PRQ_SPRS_EVT	0x0008	 /*  PRTQUE packet is not an event */
+#define	PRQ_SPRS_EVT_BIT	3       /*  bit position */
+
+/*				E - override with log priority */
+#define	PRQ_LOG_OVERRIDE_MASK	0x0010	 /*  field mask */
+#define	PRQ_LOG_OVERRIDE	0x0010	 /*  Priority will be overwritten to log */
+#define	PRQ_LOG_OVERRIDE_BIT	4       /*  bit position */
+
+/*				F - notification from remote server */
+#define	PRQ_REMOTE_MASK	0x0020	 /*  field mask */
+#define	PRQ_REMOTE	0x0020	 /*   notification from a remote server */
+#define	PRQ_REMOTE_BIT	5       /*  bit position */
+
+/*				G - notification type from remote server */
+#define	PRQ_REMOTE_TYPE_MASK	0x03C0	 /*  field mask */
+#define	PRQ_REMOTE_TYPE_OFFSET	6	  /*  field offset */
+#define	PRQ_REMOTE_TYPE_WIDTH	4	  /*  field width */
+#define	PRQ_REMOTE_TYPE_ADD	0x0000	 /*  add a notification from a remote server */
+#define	PRQ_REMOTE_TYPE_DEL	0x0040	 /*  delete a notification from a remote server */
+#define	PRQ_REMOTE_TYPE_CHG	0x0080	 /*  change a notification from a remote server */
+#define	PRQ_REMOTE_TYPE_REC	0x00C0	 /*  recover a notification from a remote server */
+#define	PRQ_REMOTE_TYPE_OPC	0x0100	 /*  handle a notification from an OPC server */
+#define	PRQ_REMOTE_TYPE_SLAP	0x0200	 /*  slap a notification from a remote server */
+
+/*				H - Associated DVM Video Clip */
+#define	PRQ_DVM_LINK_MASK	0x0400	 /*  field mask */
+#define	PRQ_DVM_LINK	0x0400	 /*  Indicate DVM Clip link */
+#define	PRQ_DVM_LINK_BIT	10      /*  bit position */
+
+/*                               I - Prohibit descriptor from overwritten */
+#define	PRQ_ALARM_DESC_MASK	0x0800	 /*  field mask */
+#define	PRQ_ALARM_DESC	0x0800	 /*  supply prmgr with description */
+#define	PRQDES_OFFSET	11
+#define	PRQDES_WIDTH	1
+
+/*				J - JournalOnly */
+#define	PRQ_JNL_ONLY_MASK	0x1000	 /*  mask */
+#define	PRQ_JNL_ONLY	0x1000	 /*  Journal only alarm */
+#define	PRQ_JNL_ONLY_BIT	12      /*  bit position */
+
+/*				K - Contact Cutout */
+#define	PRQ_CONT_CUT_MASK	0x2000	 /*  mask */
+#define	PRQ_CONT_CUT	0x2000	 /*  contact cutout */
+#define	PRQ_CONT_CUT_BIT	13      /*  bit position */
+
+/*                               L- Alarm for Local Node Only (no publish to other servers or console stations) */
+#define	PRQ_LOCAL_ALM_MASK	0x4000	 /*  Alarm Local only mask */
+#define	PRQ_LOCAL_ALM	0x4000	 /*  Alarm Local only */
+#define	PRQ_LOCAL_ALM_BIT	14      /*  bit position */
+
+/*                               M- Event for journalling from a Console Station */
+#define	PRQ_CSTN_EVT_MASK	0x8000	 /*  Console Station Event mask */
+#define	PRQ_CSTN_EVT	0x8000	 /*  Console Station Event */
+#define	PRQ_CSTN_EVT_BIT	15      /*  bit position */
+
+
+/*                               *********** */
+/*                               * flags 2 * */
+/*                               *********** */
+
+/*                               A - no ack sync for alarm */
+#define	PRQ_ALM_NOACKSYNC_MASK	0x0001	 /*  field mask */
+#define	PRQ_ALM_NOACKSYNC	0x0001	 /*  exclude alarm from ack sync */
+#define	PRQ_ALM_NOACKSYNC_BIT	0       /*  bit position */
+
+/*                               B - alarm is non-direct */
+#define	PRQ_ALM_NONDIRECT_MASK	0x0002	 /*  field mask */
+#define	PRQ_ALM_NONDIRECT	0x0002	 /*  alarm is non direct */
+#define	PRQ_ALM_NONDIRECT_BIT	1       /*  bit position */
+
+/*                               C - console station event should be journalled on the cluster server */
+#define	PRQ_CSTN_JNL_MASK	0x0004	 /*  field mask */
+#define	PRQ_CSTN_JNL	0x0004	 /*  console station event should be journalled on the cluster server */
+#define	PRQ_CSTN_JNL_BIT	2       /*  bit position */
+
+/*                               D - Recipe event recovery begin bracket event */
+#define	PRQ_CR_RECOVERY_BRACKET_MASK	0x0008	 /*  field mask */
+#define	PRQ_CR_RECOVERY_BRACKET	0x0008	 /*  Event is a recipe event recovery begin bracket event */
+#define	PRQ_CR_RECOVERY_BRACKET_BIT	3       /*  bit position */
+
+/*                               E - Control recipe complete event */
+#define	PRQ_CR_COMPLETE_EVT_MASK	0x0010	 /*  field mask */
+#define	PRQ_CR_COMPLETE_EVT	0x0010	 /*  Event is a control recipe complete event */
+#define	PRQ_CR_COMPLETE_EVT_BIT	4       /*  bit position */
+
+/*                               F - Recipe event is guaranteed to be delivered and journaled into the event DB */
+#define	PRQ_CR_GUARANTEED_DELIVERY_MASK	0x0020	 /*  field mask */
+#define	PRQ_CR_GUARANTEED_DELIVERY	0x0020	 /*  Event is guaranteed to be delivered and journaled into the event DB */
+#define	PRQ_CR_GUARANTEED_DELIVERY_BIT	5       /*  bit position */
+
+/*                               G - Event is indeed "Simple" -> "Condition", as required in ER6030 */
+#define	PRQ_ALM_SIMPLE_TO_CONDITION_MASK	0x0040	 /*  field mask */
+#define	PRQ_ALM_SIMPLE_TO_CONDITION	0x0040	 /*  Event is indeed a simple event */
+#define	PRQ_ALM_SIMPLE_TO_CONDITION_BIT	6       /*  bit position */
+
+/*                               H - ignore shelving state (set if alarm from pre-830 publisher or local ack enabled) */
+#define	PRQ_ALM_IGNORE_SHELVE_STATE_MASK	0x0080	 /*  field mask */
+#define	PRQ_ALM_IGNORE_SHELVE_STATE	0x0080	
+#define	PRQ_ALM_IGNORE_SHELVE_STATE_BIT	7       /*  bit position */
+
+/*                               I - alarm is unshelvable */
+#define	PRQ_UNSHELVABLE_MASK	0x0100	 /*  field mask */
+#define	PRQ_UNSHELVABLE	0x0100	 /*  unshelvable bit should be turned on for this alarm */
+#define	PRQ_UNSHELVABLE_BIT	8       /*  bit position */
+
+/*                               J - Alarm doesn't require acknowledgement */
+#define	PRQ_ALM_ACK_NOT_REQUIRED_MASK	0x0200	 /*  field mask */
+#define	PRQ_ALM_ACK_NOT_REQUIRED	0x0200	 /*  Alarm doesn't require acknowledgement */
+#define	PRQ_ALM_ACK_NOT_REQUIRED_BIT	9       /*  bit position */
+
+/*                               K - Indicates that the priority of the Access alarm has been lowered */
+#define	PRQ_ACS_PRI_LOWERED_BIT	10       /*  bit position */
+
+/*                               L - spare */
+
+/*                               M - Alarm for Cluster Only (no publish to other servers) */
+#define	PRQ_CLUSTER_ALM_MASK	0x1000	 /*  Alarm cluster only mask */
+#define	PRQ_CLUSTER_ALM	0x1000	 /*  Alarm cluster only */
+#define	PRQ_CLUSTER_ALM_BIT	12      /*  bit position */
+
+/*                               N - Force alarm/message/event to use event time (PRQETIME) rather than local system time */
+#define	PRQ_FORCE_ETIME_MASK	0x2000	 /*  field mask */
+#define	PRQ_FORCE_ETIME	0x2000	 /*  force to use PRQETIME */
+#define	PRQ_FORCE_ETIME_BIT	13      /*  bit position */
+
+/*                               O - notify DVM on ACK */
+#define	PRQ_DVM_ACK_MASK	0x4000	 /*  field mask */
+#define	PRQ_DVM_ACK	0x4000	 /*  notify DVM when the alarm is acknowledged */
+#define	PRQ_DVM_ACK_BIT	14      /*  bit position */
+
+/*                               P - notify DVM on RTN */
+#define	PRQ_DVM_RTN_MASK	0x8000	 /*  field mask */
+#define	PRQ_DVM_RTN	0x8000	 /*  notify DVM when the alarm is returned to normal */
+#define	PRQ_DVM_RTN_BIT	15      /*  bit position */
+
+
+/*                               *********** */
+/*                               * flags 3 * */
+/*                               *********** */
+
+/*                               A - alarm is not discoverable */
+#define	PRQ_DONTDISCOVER_MASK	0x0001	 /*  field mask */
+#define	PRQ_DONTDISCOVER	0x0001	 /*  don't discover bit */
+#define	PRQ_DONTDISCOVER_BIT	0       /*  bit position */
+
+/*                               B - alarm is not overridable */
+#define	PRQ_DONTOVERRIDE_MASK	0x0002	 /*  field mask */
+#define	PRQ_DONTOVERRIDE	0x0002	 /*  don't override bit */
+#define	PRQ_DONTOVERRIDE_BIT	1       /*  bit position */
+
+/*                               C - alarm is related to an integrated controller diagnostics parameter */
+#define	PRQ_INTDIAG_MASK	0x0004	 /*  field mask */
+#define	PRQ_INTDIAG	0x0004	 /*  integrated controller diagnostics parameter bit */
+#define	PRQ_INTDIAG_BIT	2       /*  bit position */
+
+
+
+
+/*         Priority 1. EVENT packet (dfd). */
+/*                     Built, sent, timestamped by EVENT. */
+
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                         25 !         dfd type              ! */
+/*                            --------------------------------- */
+/*                         26 !         dfd subtype           ! */
+/*                            --------------------------------- */
+/*                         27 !         dfd pointer (acronym) ! (int4) */
+/*                            --------------------------------- */
+/*                         29 !         dfd pointer file      ! (int4) */
+/*                            --------------------------------- */
+/*                         31 !         dfd pointer word      ! (int4) */
+/*                            --------------------------------- */
+/*                         33 !         dfd pointer range     ! (int4) */
+/*                            --------------------------------- */
+/*                         35 !         dfd pointer length    ! */
+/*                            --------------------------------- */
+/*                         36 !         -                     ! */
+/*                            --------------------------------- */
+/*                         37 !  file number      point       ! (int4) */
+/*                            --------------------------------- */
+/*                         39 !  record number    parameter   ! (int4) */
+/*                            --------------------------------- */
+/*                         41 !  word number      offset      ! (int4) */
+/*                            --------------------------------- */
+/*                         43 !  bit number       -           ! */
+/*                            --------------------------------- */
+/*                         44 !  field width      -           ! */
+/*                            --------------------------------- */
+/*                      45-60 !          old value            ! */
+/*                            --------------------------------- */
+/*                      61-76 !          new value            ! */
+/*                            --------------------------------- */
+/*                      77-80 !    operatorID or stationID    ! */
+/*                            --------------------------------- */
+/*                      81-   ! EVTFIL structure              ! */
+/*                            --------------------------------- */
+
+#define	EVTBF_SZ	16  /*  size of ascii event buffers (words) */
+#if	!defined(USE_DERIVED_TYPE)
+
+/* equivalences */
+
+/*       integer*2    EVTDFD, EVTSUB */
+/*       integer*4    EVTPTR, EVTPFL, EVTPWD, EVTPRG */
+/*       integer*2    EVTPLN */
+/*       integer*4    EVTFIL, EVTREC, EVTWRD */
+/*       integer*2    EVTBIT, EVTWID */
+/*       double precision EVTOLD              ;* for old numeric value */
+/*       double precision EVTNEW              ;* for new numeric value */
+/*       integer*2    EVTBF1(EVTBF_SZ)       ;* for old ascii value */
+/*       integer*2    EVTBF2(EVTBF_SZ)       ;* for new ascii value */
+/*       equivalence (EVTDFD , PRQBUF(25)) */
+/*       equivalence (EVTSUB , PRQBUF(26)) */
+/*       equivalence (EVTPTR , PRQBUF(27)) */
+/*       equivalence (EVTPFL , PRQBUF(29)) */
+/*       equivalence (EVTPWD , PRQBUF(31)) */
+/*       equivalence (EVTPRG , PRQBUF(33)) */
+/*       equivalence (EVTPLN , PRQBUF(35)) */
+/*       equivalence (EVTFIL , PRQBUF(37)) */
+/*       equivalence (EVTREC , PRQBUF(39)) */
+/*       equivalence (EVTWRD , PRQBUF(41)) */
+/*       equivalence (EVTBIT , PRQBUF(43)) */
+/*       equivalence (EVTWID , PRQBUF(44)) */
+/*       equivalence (EVTOLD , PRQBUF(45)) */
+/*       equivalence (EVTNEW , PRQBUF(61)) */
+/*       equivalence (EVTBF1 , PRQBUF(45)) */
+/*       equivalence (EVTBF2 , PRQBUF(61)) */
+#endif	
+
+
+
+/*         Priority 1. EVENT packet (text). */
+/*                     Built, sent, timestamped by EVTMSG. */
+
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                         25 !  dfd type    = ASCDFD         ! */
+/*                            --------------------------------- */
+/*                         26 !  dfd subtype = 0              ! */
+/*                            --------------------------------- */
+/*                         27 !  dfd pointer = 0              ! (int4) */
+/*                            --------------------------------- */
+/*                         29 !  dfd pointer file  = 0        ! (int4) */
+/*                            --------------------------------- */
+/*                         31 !  dfd pointer word  = 0        ! (int4) */
+/*                            --------------------------------- */
+/*                         33 !  dfd pointer range = 0        ! (int4) */
+/*                            --------------------------------- */
+/*                         35 !  dfd pointer length= 0        ! */
+/*                            --------------------------------- */
+/*                         36 !         -                     ! */
+/*                            --------------------------------- */
+/*                         37 !  file number                  ! (int4) */
+/*                            --------------------------------- */
+/*                         39 !  record number                ! (int4) */
+/*                            --------------------------------- */
+/*                         41 !  word number                  ! (int4) */
+/*                            --------------------------------- */
+/*                         43 !  bit number  = 0              ! */
+/*                            --------------------------------- */
+/*                         44 !  field width = 0              ! */
+/*                            --------------------------------- */
+/*                      45-80 !  spare                        ! */
+/*                            --------------------------------- */
+/*                      81-   ! EVTFIL structure              ! */
+/*                            --------------------------------- */
+
+
+
+/*         Priority 1. ALARM packet. */
+/*                     Built by user, sent and timestamped by ALARM. */
+
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                      25-28 ! from/old/limit value          ! (dble) */
+/*                            --------------------------------- */
+/*                      29-32 ! to/new/current value          ! (dble) */
+/*                            --------------------------------- */
+/*                      33-38 !      alarm type specific      ! */
+/*                            --------------------------------- */
+
+/*                            point alarms: (see DAQQUE and CNTQUE) */
+/*                                     33 - point number */
+/*                                     35 - point parameter */
+/*                                     36 - EE number */
+/*                                  37,38 - BB number */
+/*                            communications alarm: */
+/*                                     33 - channel number */
+/*                                     35 - rtu number */
+/*                            redundancy comms alarm: */
+/*                                     33 - type */
+#define	PNT_VER_ALM	1	/*  redundant database version alarm */
+#define	PNT_LINK_ALM	2	/*  redundant link alarm */
+#define	PNT_QUE_ALM	3	/*  redundant queue alarm */
+#define	PNT_BACKUP_ALM	4	/*  backup server offline alarm */
+#define	PNT_LINK0_ALM	5	/*  redundant link0 alarm */
+#define	PNT_LINK1_ALM	6	/*  redundant link1 alarm */
+#define	PNT_SYNCH_ALM	7 /*  redundant synch alarm */
+/*                                     35 - server number */
+/*                            TPS alarms: */
+/*                                     33 - point number */
+/*                                     35 - param number */
+/*                                     36 - EE number */
+/*                                  37,38 - BB number */
+/*                            Generic Latched alarms: */
+/*                                     33 - 0 */
+/*                                     35 - subtype specific unique parameter */
+/*                            --------------------------------- */
+/*                         39 ! Controller specific alm data  ! */
+/*                            --------------------------------- */
+/*                         40 ! unacknowleged timeout         ! - minutes */
+/*                            --------------------------------- */
+/*                      41-44 ! oldest time of alarm          ! - used by single line alarm presentation */
+/*                            --------------------------------- */
+/*                         45 ! oldest time bias              ! - used by single line alarm presentation */
+/*                            --------------------------------- */
+/*                         46 ! count                         ! - used by single line alarm presentation */
+/*                            --------------------------------- */
+/*                      47-48 ! parent point number           ! - used by remote alarms only */
+/*                            --------------------------------- */
+/*                         49 ! target param number           ! - stores the param number used for ack back to controller */
+/*                            --------------------------------- */
+/*                         50 ! original area                 ! */
+/*                            --------------------------------- */
+/*                      51-52 ! original parent               ! */
+/*                            --------------------------------- */
+/*                      53-56 ! alarm shelve time             ! */
+/*                            --------------------------------- */
+/*                      57-60 ! alarm expire time             ! */
+/*                            --------------------------------- */
+/*                      61    ! alarm expire time bias        ! */
+/*                            --------------------------------- */
+/*                      62    ! alarm engr unit param num     ! - stores the param number that has engineering unit param name */
+/*                            --------------------------------- */
+/*                      63    ! alarm unshelved delay         ! - unshelved delay on rtn (in seconds) */
+/*                            --------------------------------- */
+/*                      64-80 ! spare                         ! */
+/*                            --------------------------------- */
+/*                      81-   ! EVTFIL structure              ! */
+/*                            --------------------------------- */
+
+#if	!defined(USE_DERIVED_TYPE)
+
+/* equivalences */
+
+/*       integer*2    ALMPAR, ALMEE,  ALMCTRL, ALMCOUNT, ALMOLDBIAS, ALMUACKTOUT */
+/*       integer*2    ORGAREA, ALMEXPIREBIAS, ALMUNSHELVEDDELAY */
+/*       integer*4    ALMFTL, ALMFTH, ALMBB, ALMOLDTIME(2), ALMEXPIRETIME(2), ALMSHELVETIME(2) */
+/*       PNTNUM       ALMPNT, ALMPARENT, ORGPARENT */
+/*       PRMNUM       ALMEUPARAMNUM */
+/*       double precision ALMLIM ,ALMVAL */
+/*       equivalence (ALMLIM           ,PRQBUF(25)) */
+/*       equivalence (ALMVAL           ,PRQBUF(29)) */
+/*       equivalence (ALMPNT           ,PRQBUF(33)) */
+/*       equivalence (ALMPAR           ,PRQBUF(35)) */
+/*       equivalence (ALMEE            ,PRQBUF(36)) */
+/*       equivalence (ALMBB            ,PRQBUF(37)) */
+/*       equivalence (ALMCTRL          ,PRQBUF(39)) */
+/*       equivalence (ALMUACKTOUT      ,PRQBUF(40)) */
+/*       equivalence (ALMOLDTIME       ,PRQBUF(41)) */
+/*       equivalence (ALMOLDBIAS       ,PRQBUF(45)) */
+/*       equivalence (ALMCOUNT         ,PRQBUF(46)) */
+/*       equivalence (ALMPARENT        ,PRQBUF(47)) */
+/*       equivalence (ORGAREA          ,PRQBUF(50)) */
+/*       equivalence (ORGPARENT        ,PRQBUF(51)) */
+/*       equivalence (ALMSHELVETIME    ,PRQBUF(53)) */
+/*       equivalence (ALMEXPIRETIME    ,PRQBUF(57)) */
+/*       equivalence (ALMEXPIREBIAS    ,PRQBUF(61)) */
+/*       equivalence (ALMEUPARAMNUM    ,PRQBUF(62)) */
+/*       equivalence (ALMUNSHELVEDDELAY,PRQBUF(63)) */
+#endif	
+
+
+
+/*         Priority 1. Function Request */
+
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                      25-26 ! function specific parameter 1 ! */
+/*                            --------------------------------- */
+
+/*				disable system     - 0 */
+/*       disable area       - areanumber */
+/*       disable EE         - EE code */
+/*				disable point 	   - point number */
+/*				TPS recovery begin - EE code */
+/*				TPS recovery end   - EE code */
+
+
+
+/*                            --------------------------------- */
+/*                      27-28 ! function specific parameter 2 ! */
+/*                            --------------------------------- */
+/*                      29-30 ! function parameter 3          ! */
+/*                            --------------------------------- */
+/*                      31-32 ! function parameter 4          ! */
+/*                            --------------------------------- */
+/*                      33-34 ! function parameter 5          ! */
+/*                            --------------------------------- */
+/*                      35-36 ! function parameter 6          ! */
+/*                            --------------------------------- */
+/*                      37-38 ! function parameter 7          ! */
+/*                            --------------------------------- */
+/*			    Quality Changes */
+/*			    function parameter 1: if <>0, system change */
+/*			    function parameter 2: connection */
+/*			    function parameter 3: BB/SCADA Controller */
+/*			    function parameter 4: EE/SCADA Channel */
+/*			    function parameter 5: point */
+/*			    function parameter 6: param */
+/*			    function parameter 7: quality */
+
+/*                            --------------------------------- */
+/*                      39-80 !             spare             ! */
+/*                            --------------------------------- */
+/*                      81-   ! EVTFIL structure              ! */
+/*                            --------------------------------- */
+
+
+#if	!defined(USE_DERIVED_TYPE)
+
+/* equivalences */
+
+/*       integer*4    FNPAR1, FNPAR2, FNPAR3, FNPAR4, FNPAR5, FNPAR6, FNPAR7 */
+/*       integer*4    FNPAR_RECID(2) */
+/*       equivalence (FNPAR1       ,PRQBUF(25)) */
+/*       equivalence (FNPAR2       ,PRQBUF(27)) */
+/*       equivalence (FNPAR3       ,PRQBUF(29)) */
+/*       equivalence (FNPAR4       ,PRQBUF(31)) */
+/*       equivalence (FNPAR5       ,PRQBUF(33)) */
+/*       equivalence (FNPAR6       ,PRQBUF(35)) */
+/*       equivalence (FNPAR7       ,PRQBUF(37)) */
+/*       equivalence (FNPAR_RECID  ,PRQBUF(25)) */
+#endif	
+
+
+
+/*         Priority 1. Message */
+
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                      25-80 ! msgdir buffer                 ! */
+/*                            --------------------------------- */
+/*                      81-   ! EVTFIL structure              ! */
+/*                            --------------------------------- */
+
+
+#if	!defined(USE_DERIVED_TYPE)
+
+/* equivalences */
+
+/*       integer*2    PRQMSGBUF(MSGDSZ) */
+/*       equivalence (PRQMSGBUF    ,PRQBUF(25)) */
+#endif	
+
+
+
+/*         Priority 1. Event - Pure Text */
+
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*		       25-80 !		   spare	     ! */
+/*                            --------------------------------- */
+/*                      81-   ! EVTFIL structure              ! */
+/*                            --------------------------------- */
+
+
+
+/*         Priority 2.  REPORT packet. */
+/*                      Built ,sent and timestamped by PRSEND. */
+
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                      25-88 !   128 character file name     ! */
+/*                            --------------------------------- */
+#define	PRQNAM_SZ	128
+#if	!defined(USE_DERIVED_TYPE)
+
+/* equivalences */
+
+/*       integer*2     PRQNAM(PRQNAM_SZ/2) */
+/*       equivalence   (PRQNAM ,PRQBUF(25)) */
+#endif	
+
+
+
+
+// Fortran structure cannot be converted to C due to some type differences
+// As a result, there is no t_prtque, so lets define one.
+typedef struct prtque t_prtque;
+
+
+/*       type    prtque_event */
+/*       sequence */
+/*          integer*2  evtdfd */
+/*          integer*2  evtsub */
+/*          integer*4  evtptr */
+/*          integer*4  evtpfl */
+/*          integer*4  evtpwd */
+/*          integer*4  evtprg */
+/*          integer*2  evtpln */
+/*          integer*2  spare34 */
+/*          integer*4  evtfil */
+/*          integer*4  evtrec */
+/*          integer*4  evtwrd */
+/*          integer*2  evtbit */
+/*          integer*2  evtwid */
+/*          union */
+/*             map */
+/*                integer*2  evtbf1(EVTBF_SZ) */
+/*             end map */
+/*             map */
+/*                real*8  evtold */
+/*             end map */
+/*          end union */
+/*          union */
+/*             map */
+/*                integer*2  evtbf2(EVTBF_SZ) */
+/*             end map */
+/*             map */
+/*                real*8  evtnew */
+/*             end map */
+/*          end union */
+/*          integer*2  spare2(4) */
+/*          type(almevtfil) event */
+/*       end type prtque_event */
+
+/*       type prtque_event_text */
+/*       sequence */
+/*          integer*2  evtdfd */
+/*          integer*2  evtsub */
+/*          integer*4  evtptr */
+/*          integer*4  evtpfl */
+/*          integer*4  evtpwd */
+/*          integer*4  evtprg */
+/*          integer*2  evtpln */
+/*          integer*2  spare34 */
+/*          integer*4  evtfil */
+/*          integer*4  evtrec */
+/*          integer*4  evtwrd */
+/*          integer*2  evtbit */
+/*          integer*2  evtwid */
+/*          integer*2  spare(36) */
+/*          type(almevtfil) event */
+/*       end type prtque_event_text */
+
+
+/*       type prtque_alarm */
+/*       sequence */
+/*          real*8     almlim */
+/*          real*8     almval */
+/*          PNTNUM     almpnt */
+/*          integer*2  almpar */
+/*          integer*2  almee */
+/*          integer*4  almbb */
+/*          integer*2  almctrl */
+/*          integer*2  almuacktout */
+/*          integer*4  almoldtime(2) */
+/*          integer*2  almoldbias */
+/*          integer*2  almcount */
+/*          PNTNUM     almparent */
+/*          PRMNUM     almtargetparam */
+/*          integer*2  almorgarea */
+/*          PNTNUM     almorgparent */
+/*          integer*4  almshelvetime(2) */
+/*          integer*4  almexpiretime(2) */
+/*          integer*2  almexpirebias */
+/*          PRMNUM     almeuparamnum */
+/*          integer*2  almunshelveddelay */
+/*          integer*2  spare(17) */
+/*          type(almevtfil) event */
+/*       end type prtque_alarm */
+
+
+/*       type prtque_message */
+/*       sequence */
+/*          type(t_msgdir) msgdir */
+/*          integer*2  spare(56-MSGDSZ) */
+/*          type(almevtfil) event */
+/*       end type prtque_message */
+
+/*       type prtque_function */
+/*       sequence */
+/*          integer*4  fnpar1 */
+/*          integer*4  fnpar2 */
+/*          integer*4  fnpar3 */
+/*          integer*4  fnpar4 */
+/*          integer*4  fnpar5 */
+/*          integer*4  fnpar6 */
+/*          integer*4  fnpar7 */
+/*          integer*2  spare(42) */
+/*          type(almevtfil) event */
+/*       end type prtque_function */
+
+/*       type prtque_file */
+/*       sequence */
+/*          integer*2  prqnam(PRQNAM_SZ/2) */
+/*       end type prtque_file */
+
+/*       type t_prtque */
+/*       sequence */
+/*          integer*2  prqnxt(2) */
+/*          integer*2  prqlck */
+/*          integer*2  prqcrt */
+/*          integer*2  prqlpt */
+/*          integer*2  prqtype */
+/*          integer*2  prqsubtyp */
+/*          integer*2  prqflag */
+/*          integer*2  prqcookie(2) */
+/*          integer*2  prqstateflag */
+/*          integer*2  prqflag2 */
+/*          integer*2  prqstateflag2 */
+/*          integer*2  prqflag3 */
+/*          integer*2  spare(10) */
+/*          union */
+/*              map */
+/*                type(prtque_event)  event */
+/*              end map */
+/*              map */
+/*                type(prtque_event_text) event_text */
+/*              end map */
+/*              map */
+/*                type(prtque_alarm)  alarm */
+/*              end map */
+/*              map */
+/*                type(prtque_file)   file */
+/*              end map */
+/*              map */
+/*                type(prtque_message)   message */
+/*              end map */
+/*              map */
+/*                type(prtque_function)  function */
+/*              end map */
+/*          end union */
+/*       end type t_prtque */
+
+#if	!defined(USE_DERIVED_TYPE)
+
+/* equivalences */
+
+/*       type(t_prtque) PRQSTRUCT */
+/*       equivalence  (PRQSTRUCT,PRQBUF(1)) */
+#endif	
+
+
+
+
+
+#include "src/evtfil_def"
+
+struct    prtque_event
+{
+    int2  evtdfd;
+    int2  evtsub;
+    int4  evtptr;
+    int4  evtpfl;
+    int4  evtpwd;
+    int4  evtprg;
+    int2  evtpln;
+    int2  spare34;
+    int4  evtfil;
+    int4  evtrec;
+    int4  evtwrd;
+    int2  evtbit;
+    int2  evtwid;
+    union {
+      int2  evtold[DBLE_SZ];
+      int2  evtbf1[EVTBF_SZ];
+      } oldval;
+    union {
+      int2  evtnew[DBLE_SZ];
+      int2  evtbf2[EVTBF_SZ];
+      } newval;
+    int2  spare2[4];
+    struct almevtfil event;
+};
+
+struct    prtque_event_text
+{
+    int2  evtdfd;
+    int2  evtsub;
+    int4  evtptr;
+    int4  evtpfl;
+    int4  evtpwd;
+    int4  evtprg;
+    int2  evtpln;
+    int2  spare34;
+    int4  evtfil;
+    int4  evtrec;
+    int4  evtwrd;
+    int2  evtbit;
+    int2  evtwid;
+    int2  spare[36];
+    struct almevtfil event;
+};
+
+struct    prtque_alarm
+{
+    int2     almlim[DBLE_SZ];
+    int2     almval[DBLE_SZ];
+    PNTNUM   almpnt;
+    int2     almpar;
+    int2     almee;
+    int4     almbb;
+    int2     almctrl;
+    int2     almuacktout;
+    HSCTIME  almoldtime;
+    int2     almoldbias;
+    int2     almcount;
+    PNTNUM   almparent;
+    PRMNUM   almtargetparam;
+    int2     almorgarea;
+    PNTNUM   almorgparent;
+    HSCTIME  almshelvetime;
+    HSCTIME  almexpiretime;
+    int2     almexpirebias;
+    PRMNUM   almeuparamnum;
+    int2     almunshelveddelay;
+    int2     spare[17];
+    struct almevtfil event;
+};
+
+struct    prtque_message
+{
+    struct msgdir msgbuf;
+    int2 spare[56-MSGDSZ];
+    struct almevtfil event;
+};
+
+struct    prtque_function
+{
+    int4  fnpar1;
+    int4  fnpar2;
+    int4  fnpar3;
+    int4  fnpar4;
+    int4  fnpar5;
+    int4  fnpar6;
+    int4  fnpar7;
+    int2  spare[42];
+    struct almevtfil event;
+};
+
+struct    prtque_file
+{
+    int2  prqnam[PRQNAM_SZ/2];
+};
+
+
+struct    prtque
+{
+    int2  prqnxt[2];
+    int2  prqlck;
+    int2  prqcrt;
+    int2  prqlpt;
+    int2  prqtype;
+    int2  prqsubtyp;
+    int2  prqflag;
+    int2  prqcookie[2];
+    int2  prqstateflag;
+    int2  prqflag2;
+    int2  prqstateflag2;
+    int2  prqflag3;
+    int2  spare[10];
+    union
+    {
+        struct prtque_event 		event;
+        struct prtque_event_text 	event_text;
+        struct prtque_alarm 		alarm;
+        struct prtque_file 		file;
+        struct prtque_message 	message;
+        struct prtque_function	function;
+    } type;
+};
+
+#ifdef __cplusplus
+	static_assert(sizeof(prtque_event) == (PRQSZ * sizeof(int2)) - offsetof(prtque, type), "prtque_event struct is incorrect");
+	static_assert(sizeof(prtque_event_text) == (PRQSZ * sizeof(int2)) - offsetof(prtque, type), "prtque_event_text struct is incorrect");
+	static_assert(sizeof(prtque_alarm) == (PRQSZ * sizeof(int2)) - offsetof(prtque, type), "prtque_alarm struct is incorrect");
+	static_assert(sizeof(prtque_message) == (PRQSZ * sizeof(int2)) - offsetof(prtque, type), "prtque_message struct is incorrect");
+	static_assert(sizeof(prtque_function) == (PRQSZ * sizeof(int2)) - offsetof(prtque, type), "prtque_function struct is incorrect");
+	static_assert(sizeof(prtque_file) <= (PRQSZ * sizeof(int2)) - offsetof(prtque, type), "prtque_file struct is incorrect");
+	static_assert(sizeof(prtque) == PRQSZ * sizeof(int2), "prtque struct is different size to PRQSZ");
+#endif
+
+/* PROTOTYPES */
+
+EXTERN_C int2 FORTCALL ALARMX (int2*);
+EXTERN_C int2 FORTCALL NORMAL (int2*);
+EXTERN_C int2 FORTCALL FIREALARM(int2*);
+EXTERN_C int2 FORTCALL FIRENORMAL(int2*);
+EXTERN_C void FORTCALL PRQSND (int2*,int2*);
+EXTERN_C int2 prqsnd (struct prtque* pPrtbuf, int2 nQueue);
+
+
+
+#endif	
+#endif	
+

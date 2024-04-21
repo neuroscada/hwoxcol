@@ -1,0 +1,87 @@
+#if	!defined( AASPRF_SZ )
+
+
+/*              Area Profile Definition */
+/*              ----------------------- */
+
+/*         RCS REVISION: */
+/*         @(#)aasprf_def main.SVR_MASTERPROJ_Integration.R0930_Int.1 */
+
+/*     There is one record for each Area Profile */
+
+/*     This file is processed by deftoxml converter to generate XML & XSD files */
+/*     for the Server Configuration Utility (databld).  Any changes to structure */
+/*     or interpretation of this file must be reflected in XML definitions */
+/*     on lines beginning with *Xml below.  The associated Microsoft Excel  */
+/*     file for the databld utility (databld\excel\AssetProfile_Excel.xlsx) may also */
+/*     need to be updated when changes are made. */
+
+/*       integer*2      AASPRF_SZ */
+#define	AASPRF_SZ	63	
+
+/*       integer*2      AASPRF_NUM */
+#define	AASPRF_NUM	100	
+
+/*                      5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                     --------------------------------- */
+/*           1 -  8 ;* ! Name (16 Char)                !                XML="AssetProfileName" */
+/*                  ;* --------------------------------- */
+/*           9 - 24 ;* ! Descriptor (32 Char)          !                XML="AssetProfileDescription" */
+/*                  ;* --------------------------------- */
+/*               25 ;* ! Area number                   !                XML="AssignableAsset" */
+/*                  ;* --------------------------------- */
+/*               26 ;* ! Flags                         !                XML="Flags" */
+/*                  ;* --------------------------------- */
+/*               27 ;* ! Flex station count            ! */
+/*                  ;* --------------------------------- */
+/*               28 ;* ! Console station count         ! */
+/*                  ;* --------------------------------- */
+/*               29 ;* ! Console count                 ! */
+/*                  ;* --------------------------------- */
+/*               30 ;* ! Total count                   ! */
+/*                  ;* --------------------------------- */
+/*               31 ;* ! Spare                         ! */
+/*                  ;* --------------------------------- */
+/*          32 - 47 ;* ! 16 Area Lists                 !                XML="AssetList" */
+/*                  ;* --------------------------------- */
+/*          48 - 63 ;* ! 16 Area Profile Time Periods  !                XML="AssetTimePeriod" */
+/*                  ;* --------------------------------- */
+
+/*       integer*2 AASPRF_NAME,  AASPRF_DESC,  AASPRF_AREA */
+/*       integer*2 AASPRF_NAMSZ, AASPRF_DESSZ */
+
+#define	AASPRF_NAME	1	    /*  Name */
+#define	AASPRF_NAMSZ	16	    /*  Name size */
+#define	AASPRF_DESC	9	    /*  Descriptor */
+#define	AASPRF_DESSZ	32	    /*  Descriptor size */
+#define	AASPRF_AREA	25	    /*  Area number */
+
+#define	AASPRF_FLAGS	26
+#define	PRF_READ_ONLY	0x0001	 /*    Asset list/time period pairings cannot be changed */
+#define	PRF_NO_ACCESS	0x0002	 /*    Bit set for the No Access profile */
+
+/*       integer*2 AASPRF_LIST, AASPRF_TPD, AASPRF_PAIRNUM */
+
+#define	AASPRF_LIST	32	  /*  First area list entry */
+#define	AASPRF_TPD	48	  /*  First time period entry */
+#define	AASPRF_PAIRNUM	16	  /*  Number of */
+/*                                      ;*  Area List / Time Period pairs */
+/*     STRUCTURE: */
+
+	struct t_AASPRF {
+		/* sequence */
+		int2   name[AASPRF_NAMSZ/2];
+		int2   desc[AASPRF_DESSZ/2];
+		int2   areanum;
+		int2   flags;
+		int2   flexCount;
+		int2   cstnCount;
+		int2   conCount;
+		int2   totCount;
+		int2   spare;
+		int2   arealsts[AASPRF_PAIRNUM];
+		int2   areatmprd[AASPRF_PAIRNUM];
+	};
+
+
+#endif	

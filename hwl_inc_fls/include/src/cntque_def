@@ -1,0 +1,202 @@
+
+/*                             CNTQUE - control request queue */
+/*                             ------------------------------ */
+
+/*     SCCS REVISION: */
+/*         @(#)cntque_def	main.SVR_MASTERPROJ_Integration.2 */
+
+
+#if	!defined(CNQSZ)
+#define	CNQSZ	54     /*  multiple of 6 for page 10 repeats */
+#if	!defined( inside_IDL )
+
+/*         CNTQUE has a queue structure. There is one header per task */
+/*         lrn plus one free queue, each of length 6 words as follows. */
+/*         The next record after the headers is the first data record. */
+
+/*                 word 1,2 - head pointer */
+/*                      3,4 - tail pointer */
+/*                        5 - lock */
+/*                        6 - length counter */
+
+/*         Other records: */
+/*                              5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                             --------------------------------- */
+/*                         1,2 !    pointer to next frame      ! */
+/*                             --------------------------------- */
+/*                           3 !    frame priotity (task LRN)  ! */
+/*                             --------------------------------- */
+/*                           4 !    control timer              ! */
+/*                             --------------------------------- */
+/*                         5-6 !    point number               ! */
+/*                             --------------------------------- */
+/*                           7 !    point parameter            ! */
+/*                             --------------------------------- */
+/*                           8 !              -              !A! */
+/*                             --------------------------------- */
+/*                        9-14 !    address packet             ! */
+/*                             --------------------------------- */
+/*                          15 !    spare15                    ! */
+/*                             --------------------------------- */
+/*                          16 !    return lrn / error status  ! */
+/*                             --------------------------------- */
+/*                       17-20 !     target value (e.u or %)   ! */
+/*                             --------------------------------- */
+/*                       21-24 !     output value (normalized) ! */
+/*                             --------------------------------- */
+/*                    or 17-48 !     string data (64 chars)    ! */
+/*                             --------------------------------- */
+/*                       49-52 !     GDA error                 ! */
+/*                             --------------------------------- */
+/*                       53-54 !     spare                     ! */
+/*                             --------------------------------- */
+/*     Flags: */
+#define	CNTFLG_STA	0x0001	
+
+/*     Sizes: */
+#define	CNTVAL_BUFSZ	64 /*  number of characeters in buffer */
+
+/*        Note: For status requests (STA point, MD param, SP_ENUM param) */
+/*              the normalized value holds the output value as */
+/*              Field_width*16 + output_value. */
+/*              Widths are 1,3,or 7. */
+
+/*              Lrn is filled in by cntrlx routine. */
+/*              If bit 15 is on, then lrn is information only, */
+/*              else the calling task expects a reply. */
+
+/*       integer(2) CNQBUF(CNQSZ) */
+
+/*   Word offsets in CNQBUF */
+#define	CNTXTOV	4
+#define	CNTXPNT	5
+#define	CNTXPAR	7
+#define	CNTXFLG	8
+#define	CNTXADD	9
+#define	CNTXRTU	14
+#define	CNTXLRN	16
+#define	CNTXVAL	17
+#define	CNTXNRM	21
+#define	CNTXERR	49
+
+/*   Equivalences to CNQBUF */
+/*       PNTNUM           CNTPNT */
+/*       PRMNUM           CNTPAR */
+/*       integer(2)       CNTTOV , CNTFLG , CNTADD(6) , CNTLRN */
+/*       double precision CNTVAL , CNTNRM */
+/*       character        CNTSTR*(CNTVAL_BUFSZ) */
+/*       equivalence ( CNTTOV ,CNQBUF(CNTXTOV) ) */
+/*       equivalence ( CNTPNT ,CNQBUF(CNTXPNT) ) */
+/*       equivalence ( CNTPAR ,CNQBUF(CNTXPAR) ) */
+/*       equivalence ( CNTFLG ,CNQBUF(CNTXFLG) ) */
+/*       equivalence ( CNTADD ,CNQBUF(CNTXADD) ) */
+/*       equivalence ( CNTLRN ,CNQBUF(CNTXLRN) ) */
+/*       equivalence ( CNTVAL ,CNQBUF(CNTXVAL) ) */
+/*       equivalence ( CNTNRM ,CNQBUF(CNTXNRM) ) */
+/*       equivalence ( CNTSTR ,CNQBUF(CNTXVAL) ) */
+
+/*   Equivalences to CNTADD and hence CNQBUF */
+/*       integer(2)    CNTTYP , CNTFMT , CNTADR */
+/*       integer(2)    CNTWFMT, CNTWADR, CNTRTU */
+/*       integer(2)    CNTFIL , CNTREC , CNTWRD */
+/*       PNTNUM       CNTSPNT */
+/*       integer(2)    CNTSPRM */
+/*       integer(2)    CNTCMD , CNTCRT , CNTSLT , CNTSBSLT */
+/*       integer(2)    CNTARG1, CNTMON */
+/*	  Hardware address packet */
+/*       equivalence ( CNTTYP  ,CNTADD(1) ) */
+/*       equivalence ( CNTFMT  ,CNTADD(2) ) */
+/*       equivalence ( CNTADR  ,CNTADD(3) ) */
+/*       equivalence ( CNTWFMT ,CNTADD(4) ) */
+/*       equivalence ( CNTWADR ,CNTADD(5) ) */
+/*       equivalence ( CNTRTU  ,CNTADD(6) ) */
+/*         Database file address packet */
+/*       equivalence ( CNTFIL  ,CNTADD(3) ) */
+/*       equivalence ( CNTREC  ,CNTADD(4) ) */
+/*       equivalence ( CNTWRD  ,CNTADD(5) ) */
+/*         Database point address packet */
+/*       equivalence ( CNTSPNT ,CNTADD(3) ) */
+/*       equivalence ( CNTSPRM ,CNTADD(5) ) */
+/*         CFGSUM address packet */
+/*       equivalence ( CNTCMD   ,CNTADD(2) ) */
+/*       equivalence ( CNTCRT   ,CNTADD(3) ) */
+/*       equivalence ( CNTSLT   ,CNTADD(4) ) */
+/*       equivalence ( CNTSBSLT ,CNTADD(5) ) */
+/*         Camera address packet */
+/*       equivalence ( CNTARG1  ,CNTADD(4) ) */
+/*       equivalence ( CNTMON   ,CNTADD(5) ) */
+
+/*         PV control types. */
+
+#define	RESET	0.0  /*  reset alarm */
+#define	ONLINE	1.0  /*  point online */
+#define	OFLINE	2.0  /*  point offline */
+#define	ACKNOW	3.0  /*  acknowledge alarm */
+
+/*         Control timeout special values. */
+
+#define	CNTPPS	0  /*  if  = then PPS point,parameter */
+#define	CNTDEQ	-50  /*  if <= then dequeue only */
+#define	CNTALM	-40  /*  if <= then dequeue and alarm */
+#define	CNTLST	-30  /*  if <= then dequeue,alarm, and lost */
+
+/*         Control lrn special values. */
+
+#define	CNTNOWAIT	0x8000	 /*  if bit set, then client not waiting */
+#define	CNTNOACT	0xC000	 /*  if bit set, then do not PPS or alarm */
+
+
+
+
+#pragma pack(push,2)
+
+typedef struct {
+    uint2    typ;
+    uint2    cmd;
+    uint2    crt;
+    uint2    slt;
+    uint2    sbslt;
+    uint2    rtu;
+} cfgpkt;
+
+typedef struct {
+    uint2    typ;
+    uint2    cmd;
+    uint2    crt;
+    uint2    arg;
+    uint2    mon;
+    uint2    rtu;
+} campkt;
+
+typedef struct {
+    int2          next[2];
+    uint2         pri;
+    int2          timeout;
+    PNTNUM        point;
+    PRMNUM        param;
+    uint2         flags;
+    union {
+      addpkt      add;        /* see CNT000_DEF, 6 words long */
+      cfgpkt      cfg;        /* cfgsum packet,  6 words long */
+      campkt      cam;        /* camera packet,  6 words long */
+    };
+    int2          spare15;
+    int2          lrn;
+    union {
+      struct {
+        double    val;
+        double    nrm;
+      };
+      char        str[CNTVAL_BUFSZ];
+    };
+    int2          gdaerr[4];
+    int2          spare53[2];
+} cntque;
+
+#pragma pack(pop)
+
+
+
+#endif	
+#endif	
+

@@ -1,0 +1,351 @@
+
+/*     G_PAR_DEF - Group paranoid definitions */
+
+/*     Defines paranoid group numbers and error levels for use */
+/*     with G_PAR routine. */
+
+/*     This file is generated from environ.h and included by environ.h */
+
+/*     USAGE: */
+/*       include <<<std>def>src>g_par_def */
+/*       if (g_par(g_dsply,l_param)) then */
+/*         write ..... */
+/*       end if */
+
+
+/*     DECLARE: */
+/*         logical*2 G_PAR */
+
+
+/*     PARANOID DEBUGGING LEVELS: */
+/*        These values indicate the level of debugging for the */
+/*        range of values that the environment variable can take */
+
+#define	L_ZERO	0 /*  display no footprints */
+#define	L_ACTION_ABORT	5 /*  display aborted changes to points heap */
+#define	L_ERROR	10 /*  display system call errors */
+#define	L_ACTION_CHANGE	10 /*  display changes to point heap */
+#define	L_LOG	15 /*  display log messages */
+#define	L_RANGE	20 /*  display range check errors */
+#define	L_PARAM	30 /*  display parameters to functions */
+#define	L_RETURN	40 /*  display return values */
+#define	L_PRINT	100 /*  display footprint */
+
+#define	L_DEFAULT	L_ERROR  /*  default error level (if no env variable) */
+#define	L_INVALID	1000     /*  used to indicate need to read the env variable */
+
+
+/*     SUBSYSTEM GROUPS */
+/*       These values are used to index into the unixpar array */
+/*       It allows the env var's name and value to be retrieved for */
+/*       a particular group. */
+
+#define	G_TASK	0 /*  Task requesting and handling */
+#define	G_QUEUE	1 /*  Queue handling */
+#define	G_SHM	2 /*  Shared memory */
+#define	G_DAT	3 /*  Data I/O routines */
+#define	G_ASCV	4 /*  ASCII conversion routines and entry points */
+#define	G_BYTE	5 /*  Byte manipulation routines */
+#define	G_GHR	6 /*  Get hardware reference (ie. ipcghr, tdcghr) */
+#define	G_HIST	7 /*  History routines */
+#define	G_LOCK	8 /*  Lock routines */
+#define	G_IPSIO	9 /*  Integrated Personal Station I/O */
+#define	G_KEY	10 /*  Keyed files */
+#define	G_CMPRES	11 /*  Compress routine for displays */
+#define	G_IPCIO	12 /*  IPC PLC I/O */
+#define	G_MODBUS	13 /*  Modbus protocol handling (ie. IPC) */
+#define	G_TIME	14 /*  System time handling */
+#define	G_DEVIO	15 /*  Set raw I/O attributes */
+#define	G_ERR	16 /*  Communications errors and statistics */
+#define	G_ARITH	17 /*  Real arithmetic (ie. fclamp, mzero, ssne) */
+#define	G_BIT	18 /*  Bit manipulations */
+#define	G_SEM	19 /*  Semaphore handling */
+#define	G_TDC	20 /*  TDC routines */
+#define	G_GPMAIN	21 /*  Database I/O and statistics */
+#define	G_ALM	22 /*  Alarm counts (ie. alarm increment, alarm decrement) */
+#define	G_CRT	23 /*  CRT area assignment */
+#define	G_PRINT	24 /*  Printer handling */
+#define	G_NIF_MSGQ	25 /*  Message queue interface routines */
+#define	G_NIF_TCP	26 /*  TCP network interface routines */
+#define	G_NIF_AIF	27 /*  NIF application interface routines */
+#define	G_NIF_SYS	28 /*  General system call errors */
+#define	G_NIF_GEN	29 /*  General NIF routines */
+#define	G_NIF_MSG	30 /*  Message management routines */
+#define	G_TRACE	31 /*  Trace messages */
+#define	G_APPLIC	32 /*  Application programs */
+#define	G_R12IO	33 /*  R1200 and R1200c I/O */
+#define	G_LNK	34 /*  Link routines for dual redundant systems */
+#define	G_MODIO	35 /*  MODICON I/O routines */
+#define	G_ABRIO	36 /*  Allen Bradley I/O routines */
+#define	G_KNGIO	37 /*  King Fisher  I/O routines */
+#define	G_PSWIO	38 /*  Peripheral switch I/O routine */
+#define	G_CL	39 /*  TDC CL compiler interface routines */
+#define	G_CHKSUM	40 /*  Checksum generation routines */
+#define	G_IO	41 /*  General I/O routines */
+#define	G_ASEAIO	42 /*  Asea I/O routines */
+#define	G_ULPIO	43 /*  MicroLPM I/O routines */
+#define	G_STRING	44 /*  String manipulation routines */
+#define	G_BBLNK	45 /*  Bristol Babcock link layer routines */
+#define	G_BBNET	46 /*  Bristol Babcock network layer routines */
+#define	G_BBTRN	47 /*  Bristol Babcock transport layer routines */
+#define	G_BBRDB	48 /*  Bristol Babcock RDB routines */
+#define	G_BBRBE	49 /*  Bristol Babcock RBE routines */
+#define	G_BBALM	50 /*  Bristol Babcock alarm routines */
+#define	G_BBSCN	51 /*  Bristol Babcock scan task routines */
+#define	G_DSPLY	52 /*  Display task and routines */
+#define	G_BBTNS	53 /*  Bristol Babcock transaction routines */
+#define	G_BBCFG	54 /*  Bristol Babcock configurator routines */
+#define	G_DUAL_PSW	55 /*  Dual Redundant PSW software */
+#define	G_DUAL_LINK	56 /*  Dual Redundant link manager software */
+#define	G_DUAL_SYNC	57 /*  Dual Redundant time synchronisation software */
+#define	G_DUAL_TIME	58 /*  Dual Redundant time server software */
+#define	G_DUAL_QUEUE	59 /*  Dual Redundant queue I/F software */
+#define	G_DUAL_ONLINE	60 /*  Dual Redundant online backup software */
+#define	G_DUAL_OFFLINE	61 /*  Dual Redundant offline backup software */
+#define	G_SCAN	62 /*  Scan task software */
+#define	G_ECLIO	63 /*  Excel I/O routines */
+#define	G_SQLRPT	64 /*  SQL report program */
+#define	G_LCN	65 /*  LCN scan task */
+#define	G_LICENCE	66 /*  Licence management */
+#define	G_REPORT	67 /*  Report software */
+#define	G_I18N	68 /*  Internationalisation subsystem */
+#define	G_CONFIG	69 /*  Configuration subsystem */
+#define	G_MA5IO	70 /*  MA500 I/O routines */
+#define	G_WINPRT	71 /*  Win32 printing routines */
+#define	G_CONFD	72 /*  Configuration daemon */
+#define	G_CONFD_SELECT	73 /*  Configuration daemon select subsystem */
+#define	G_APPIO	74 /*  Applicom I/O routines */
+#define	G_SQDIO	75 /*  Square D I/O routines */
+#define	G_RAD6500	76 /*  Rad6500 scan task */
+#define	G_RADDAEMON	77 /*  Rad6500 scan daemon */
+#define	G_DEFFILE	78 /*  Get definition file routines */
+#define	G_S90CFG	79 /*  Series 9000 cfgsum routines */
+#define	G_SYSCFG	80 /*  System config (OS or SCAN/XSM/XFi) */
+#define	G_CCTV	81 /*  CCTV scan tasks */
+#define	G_LIGHTS	82 /*  Lighting control option */
+#define	G_G90IO	83 /*  GE Fanuc series 90 I/O */
+#define	G_POINTS	84 /*  Point database access */
+#define	G_DICT	85 /*  Dictionary access */
+#define	G_XDIALUP	86 /*  XLNET dialup program */
+#define	G_ODBC	87 /*  ODBC interface */
+#define	G_NOTCLI	88 /*  Notifications and alarms client */
+#define	G_EVARCH	89 /*  Extended event archiving */
+#define	G_ALARM	90 /*  Low level alarm manipulation */
+#define	G_CDA	91 /*  Control data access routines */
+#define	G_LOGGER	92 /*  Logger */
+#define	G_UMAXIO	93 /*  UMAX I/O routines */
+#define	G_SPPREC	94 /*  S9000 SPP and recipe paranoids */
+#define	G_COPYPROT	95 /*  Copy protection */
+#define	G_UDCCFG	96 /*  UDC cfgsum routines */
+#define	G_UDCDEF	97 /*  UDC definition file routines */
+#define	G_MESSAGE	98 /*  Message directory access */
+#define	G_FBUSIO	99 /*  Fieldbus routines */
+#define	G_BACNET	100 /*  BACnet server */
+#define	G_DFSIO	101 /*  FS90 */
+#define	G_OREPORT	102 /*  Open database reporting */
+#define	G_OPC	103 /*  OPC interface */
+#define	G_DFSDMN	104 /*  FS90 daemon paranoids */
+#define	G_ZONE	105 /*  Zone enforcement */
+#define	G_SHIFTMNGR	106 /*  Shift manager */
+#define	G_ACSCFG	107 /*  Access Configurator */
+#define	G_SMS7IO	108 /*  Siemens S7 interface */
+#define	G_MMUIO	109 /*  Moore mycro 352 I/O routines */
+#define	G_ALM_NOTIF	110 /*  Alarm notification paranoids */
+#define	G_FSCIO	111 /*  FSC routines */
+#define	G_SOE	112 /*  FSCSOE routines */
+#define	G_XPC5	113 /*  XFI - XLNET general */
+#define	G_XL5IO	114 /*  XFI - I/O routines */
+#define	G_G80IO	115 /*  GEM 80 I/O routines */
+#define	G_DIALUP	116 /*  Dialup daemon routines */
+#define	G_DMNIO	117 /*  Daemon I/O routines */
+#define	G_NOTIFMNGR	118 /*  NotifMngr subsystem */
+#define	G_PGAP	119 /*  Perimeter global anti-passback routines */
+#define	G_H78IO	120 /*  7800 series burner controller paranoid */
+#define	G_OPCIO	121 /*  OPC client routines */
+#define	G_GDA	122 /*  Generic data access routines */
+#define	G_GDALOCK	123 /*  GDA locking routines */
+#define	G_GDALOCAL	124 /*  GDA local access routines */
+#define	G_GDAREM	125 /*  GDA remote access routines */
+#define	G_GDANOTSRV	126 /*  GDA notification server */
+#define	G_GDANOTCLI	127 /*  GDA notification client */
+#define	G_UL	128 /*  UL listed software */
+#define	G_BALYIO	129 /*  Bailey scan task */
+#define	G_ALMPGR	130 /*  Alarm pager */
+#define	G_MSLINKD	131 /*  Multiple server link daemon */
+#define	G_XLSSCN	132 /*  XLS scan task */
+#define	G_XLSDMN	133 /*  XLS daemon */
+#define	G_I9KSCN	134 /*  Intelliguard 9000 scan task */
+#define	G_I9KDMN	135 /*  Intelliguard 9000 daemon */
+#define	G_I9KCFG	136 /*  Intelliguard 9000 configuration task */
+#define	G_CMS	137 /*  Card Management System */
+#define	G_MSVRDF	138 /*  Multiserver report data factory server */
+#define	G_BACSCN	139 /*  BACnet scan task paranoid */
+#define	G_APACIO	140 /*  Moore APACS routines */
+#define	G_CONSVR	141 /*  Server scripting event connection server */
+#define	G_AUTSVR	142 /*  Server scripting automation server */
+#define	G_SCPPKG	143 /*  Server scripting script package */
+#define	G_CHIP	144 /*  SE chip paranoid */
+#define	G_BSIIO	145 /*  Bristol Babcock open BSI interface */
+#define	G_POINTSERVER	146 /*  PointServer development */
+#define	G_DNPSCN	147 /*  DNP3 top level scantask routines */
+#define	G_DNPSCNIO	148 /*  DNP3 I/O level scantask routines */
+#define	G_DNPDMN	149 /*  DNP3 top level daemon routines */
+#define	G_DNPUSR	150 /*  DNP3 user layer daemon routines */
+#define	G_DNPAL	151 /*  DNP3 application layer daemon routines */
+#define	G_DNPTL	152 /*  DNP3 transport layer daemon routines */
+#define	G_DNPDLL	153 /*  DNP3 data link layer daemon routines */
+#define	G_DNPIO	154 /*  DNP3 device I/O layer daemon routines */
+#define	G_TCMIO	155 /*  Tecom scan task */
+#define	G_SQLREP	156 /*  SQLRep CMS replication task */
+#define	G_SCPTSK	157 /*  Server scripting script manager task */
+#define	G_SCPMNGR	158 /*  Server scripting script manager */
+#define	G_SCPPERSIST	159 /*  Server scripting persistance */
+#define	G_SCPEDIT	160 /*  Server scripting editor */
+#define	G_TBLCURSOR	161 /*  Table Cursor */
+#define	G_RSI	162 /*  RSI Hand Reader */
+#define	G_GDASERVER	163 /*  GDASERVER */
+#define	G_GDAOPCIO	164 /*  GDA OPC client interface */
+#define	G_FILREP	165 /*  File Replication */
+#define	G_HSTBCK	166 /*  History Backfill */
+#define	G_NOTIFHOOKAPI	167 /*  Notification Hook API */
+#define	G_DSREDIRECT	168 /*  DSRedSrv and DSRedCli Redirection */
+#define	G_DSDCSRV	169 /*  DS Network Components server side */
+#define	G_DSDCCLI	170 /*  DS Network Components client side */
+#define	G_DSFILEREP	171 /*  DSFileRepSrv, DSFileRepCli and DSAPI File Replication */
+#define	G_DSPNTREP	172 /*  DSPntRepSrv, DSPntRepCli and DSAPI Point Replication */
+#define	G_DSACKSYNC	173 /*  DSAckSync Alarm and Message Acknowledgement Synching */
+#define	G_DSCOMMON	174 /*  DS Common Libraries */
+#define	G_ENERGY	175 /*  Energy Manager */
+#define	G_BCMTOOLS	176 /*  BizCalc Manager Tools */
+#define	G_BCMAUTOVAL	177 /*  BizCalc Manager Auto Validator */
+#define	G_BCMPROCESSOR	178 /*  BizCalc Manager Processor */
+#define	G_BCMSCHEDULER	179 /*  BizCalc Manager Scheduler */
+#define	G_BCMSEQUENCER	180 /*  BizCalc Manager Sequencer */
+#define	G_BCMEVENTPROC	181 /*  BizCalc Manager Event Processor */
+#define	G_BCMMONITOR	182 /*  BizCalc Manager Monitor */
+#define	G_BCMGENERAL	183 /*  BizCalc Manager General */
+#define	G_SQLDB	184 /*  SQL Database */
+#define	G_BCMALGORITHMS	185 /*  BizCalc Manager Algorithms */
+#define	G_ALMEVTATTRIBUTE	186 /*  alarm/event attributes */
+#define	G_NOTIFTRACE	187 /*  trace alarm/events in notcli/gdanotci */
+#define	G_SECURITY	188 /*  Used by login, and security library routines */
+#define	G_WTMGENERAL	189 /*  Well Test Manager Common & Client */
+#define	G_WTMDATA	190 /*  Well Test Manager Data Access */
+#define	G_WTMDEVICE	191 /*  Well Test Manager Device Access */
+#define	G_WTMPROCESSOR	192 /*  Well Test Manager Processor */
+#define	G_WTMSCHEDULER	193 /*  Well Test Manager Scheduler */
+#define	G_HTS	194 /*  History Tag Synchronization - General */
+#define	G_OPCDA	195 /*  OPC DA interface */
+#define	G_OPCAE	196 /*  OPC AE interface */
+#define	G_OPCHDA	197 /*  OPC HDA interface */
+#define	G_GS	198 /*  Global Schedules */
+#define	G_EAFGENERAL	199 /*  Experion Application Framework - General */
+#define	G_EAFCONFIG	200 /*  Experion Application Framework - Configuration */
+#define	G_EAFDESKTOP	201 /*  Experion Application Framework - Desktop */
+#define	G_EAFDIAGNOSTICS	202 /*  Experion Application Framework - Diagnostics */
+#define	G_EAFEVENTS	203 /*  Experion Application Framework - Events */
+#define	G_EAFRPDC	204 /*  Experion Application Framework - RPDC */
+#define	G_EAFSECURITY	205 /*  Experion Application Framework - Security */
+#define	G_EAFSTORAGE	206 /*  Experion Application Framework - Storage */
+#define	G_GDAUSAGE	207 /*  GDA usage statistics */
+#define	G_HTSTAG	208 /*  History Tag Synchronization - Tag Output */
+#define	G_PNTAUDIT	209 /*  Point audit messages */
+#define	G_SYSAUDIT	210 /*  System audit messages */
+#define	G_TAGAUDIT	211 /*  Tag audit messages */
+#define	G_PNTRELAUDIT	212 /*  Point relation audit messages */
+#define	G_AUDIBLE	213 /*  Annuniciation and silencing paranoids */
+#define	G_GCL	214 /*  CDA-FTW */
+#define	G_CDADATA	215 /*  CDA-FTW */
+#define	G_CDANOTIF	216 /*  CDA-FTW */
+#define	G_CDAPLATFORM	217 /*  CDA-FTW */
+#define	G_SRPERSIST	218 /*  CDA-FTW */
+#define	G_SR	219 /*  CDA-FTW */
+#define	G_SRREPL	220 /*  CDA-FTW */
+#define	G_SRWCF	221 /*  CDA-FTW */
+#define	G_ER2SR	222 /*  CDA-FTW */
+#define	G_SRREDUN	223 /*  CDA-FTW */
+#define	G_SAM	224 /*  CDA-FTW */
+#define	G_NDM	225 /*  CDA-FTW */
+#define	G_DTL	226 /*  CDA-FTW */
+#define	G_ICOA	227 /*  CDA-FTW */
+#define	G_RCOA	228 /*  CDA-FTW */
+#define	G_OPCG	229 /*  CDA-FTW */
+#define	G_EHMSRV	230 /*  Exception History Manager (EHM) - Server */
+#define	G_EHMCOLL	231 /*  Exception History Manager (EHM) - Collection */
+#define	G_EHMDATA	232 /*  Exception History Manager (EHM) - Data Layer */
+#define	G_EHMRECORD	233 /*  Exception History Manager (EHM) - Record Class */
+#define	G_EHMCACHE	234 /*  Exception History Manager (EHM) - Cache */
+#define	G_EHMQUEUE	235 /*  Exception History Manager (EHM) - Queue and Write Thread */
+#define	G_EHMCLI	236 /*  Exception History Manager (EHM) - Client and Test Harnesses */
+#define	G_FUNCTRACE	237 /*  Function tracing messages */
+#define	G_TRACEID	238 /*  Page Call-up Diagnostics messages */
+#define	G_CDARESERVED1	239 /*  CDA-FTW */
+#define	G_CDARESERVED2	240 /*  CDA-FTW */
+#define	G_CDARESERVED3	241 /*  CDA-FTW */
+#define	G_CDARESERVED4	242 /*  CDA-FTW */
+#define	G_CDARESERVED5	243 /*  CDA-FTW */
+#define	G_GCT	244 /*  FDM-FTW */
+#define	G_PS_NOTIF	245 /*  Point Servers - sending notifications to GDA */
+#define	G_PS_DATA	246 /*  Point Servers - interactions with subscriptions and reads from GDA */
+#define	G_PS_IO	247 /*  Point Servers - IO interactions */
+#define	G_PS_APP	248 /*  Point Servers - applications interactions not covered by GDA */
+#define	G_PS_UTIL	249 /*  Point Servers - any reusable helper functions used in various other layers */
+#define	G_PS_DB	250 /*  Point Servers - interactions with point server specific data persistance */
+#define	G_ICON3_CS	251 /*  iCon3 tools integration - Configuration Service */
+#define	G_ACTIVATOR	252 /*  Activator */
+#define	G_GDALIST	253 /*  GDA List Management */
+#define	G_NOTIFINDEX	254 /*  NotifMngr Indexes */
+#define	G_NOTIFSUPP	255 /*  NotifMngr Suppression */
+#define	G_ACTMNGR	256 /*  ActivityMngr */
+#define	G_SVCFRMWRK	257 /*  Used by infrastructure classes in the .Net Service Framework */
+#define	G_RESTSERVICES	258 /*  Used by REST services. (RestfulServices) */
+#define	G_EDS	259 /*  Enterprise Data Service */
+#define	G_CSID	260 /*  CSID Router */
+#define	G_PERFORM	261 /*  Used by any deliverable for performance testing */
+#define	G_PAGING	262 /*  Used by pager for all interface logging */
+#define	G_APP_SERV	263 /*  General paranoid group for Application Services */
+#define	G_DASCONFIG	264 /*  Dynamic alarm suppression configuration */
+#define	G_TAGCACHE	265 /*  TagCache process logging */
+#define	G_ACTTRACE	266 /*  Trace activities */
+#define	G_EHG	267 /*  Experion Highway Gateway */
+#define	G_IXP	268 /*  Configuration Studio Import/Export */
+#define	G_CONFIGSTSEARCH	269 /*  Configuration Studio Search */
+#define	G_EFMMNGR	270 /*  EFM Manager */
+#define	G_GEVTMNGR	271 /*  Global Event Manager - General logging */
+#define	G_GEVTINDEX	272 /*  Global Event Manager - Indexes */
+#define	G_GEVTLIST	273 /*  Global Event Manager - Live Event Buffer */
+#define	G_GEVTCURSOR	274 /*  Global Event Manager - Table Cursor */
+#define	G_GEVTPUBLISH	275 /*  Global Event Manager - Publisher */
+#define	G_CALCMNGR	276 /*  SCADA Applications Calculation Manager */
+#define	G_EQUIPCLI	277 /*  Equipment Manager Client Manager */
+#define	G_EQUIPMNGR	278 /*  Equipment Manager Model Browser */
+#define	G_EQUIPDATA	279 /*  Equipment Manager Parameter Data Source */
+#define	G_INTTEST	280 /*  Used by any deliverable for integration testing */
+#define	G_SECURITY_SORAPI	281 /*  Used by SOR API Classes and library routines */
+#define	G_SECURITY_CAPCHK	282 /*  Used by SOR Capability Classes */
+#define	G_RELCACHE	283 /*  RelCache process logging */
+#define	G_PASCN	284 /*  Protocol Adapter Scan Task */
+#define	G_PADLL	285 /*  Protocol Adapter DLL */
+#define	G_PAAPI	286 /*  Protocol Adapter API */
+#define	G_DATABLD	287 /*  Server Configuration Utility - Databld */
+#define	G_EFMDATAEXPORT	288 /*  EFM Data Export - API, Exp mngr, scheduler, base schedule item and base meter */
+#define	G_GDAMERGETABLE	289 /*  GDA Merge Table */
+#define	G_GDASOURCETABLE	290 /*  GDA Source Table */
+#define	G_SECPA	291 /*  Security Agent */
+#define	G_SECCERT	292 /*  Certificate Authority */
+#define	G_SECPDP	293 /*  Security Manager policy decision point */
+#define	G_SECTOOLS	294 /*  Security Tools */
+#define	G_UNITCONVERT	295 /*  Unit conversion */
+#define	G_EFMDX_UTIL	296 /*  EFM Data Export - File Mgmt, Age Check, Location Validation & Server Access */
+#define	G_EFMDX_CSV	297 /*  EFM Data Export - CSV exports */
+#define	G_EFMDX_CFX	298 /*  EFM Data Export - CFX exports */
+#define	G_EFMDX_XML	299 /*  EFM Data Export - XML parser */
+#define	G_EFMDX_XMLCFG	300 /*  EFM Data Export - XML parsing for configuration */
+#define	G_EFMDX_XMLDEFCFX	301 /*  EFM Data Export - XML parsing for CFX file definition */
+#define	G_SRACTIVITY	302 /*  SysRep  */
+#define	G_VARIABLEMAP	303 /*  Variable Mapping */
+#define	G_SOA	304 /*  SOA */
+#define	G_SOA_MODEL	305 /*  SOA Application Services - model synchronization */
+#define	G_SOA_SUBSCRIBE	306 /*  SOA - subscription functions */
+#define	G_GDALR	307 /*  Limit Repository connection */
+#define	G_OPCHATWRAP	308 /*  OPC HDA History Assignment Table Wrapper */

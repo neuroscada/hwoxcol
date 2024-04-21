@@ -1,0 +1,135 @@
+#if	!defined( CONTBLSZ )
+
+/*                             CONTBL - console configuration table */
+/*                             ------------------------------------------- */
+
+/*     SCCS REVISION: */
+/*         @(#)contbl_def main.SVR_MASTERPROJ_Integration.R0930_Int.3 */
+
+/*     DESCRIPTION: */
+/*         Holds all the configuration information for a console. */
+
+/*     DEPENDENCIES: */
+
+/*     DEFINITIONS: */
+
+#define	MAXSTARTUPPGSZ	130
+#define	DSAREAMAPSZ	64
+#define	PERMISSIONMAPSZ	128
+#define	CAPABILITYMAPSZ	64
+#define	MAXCONNAMESZ	40
+#define	CRTNUMLEDPNTS	48 /*  number of led points */
+#define	CONPSW_SZ	3 /*  size of level passwords, same size as LVLPSW_SZ defined in crttbl */
+#define	CONSTB_SZ	128 /*  size of STB file in words */
+#define	CONTBLSZ	1024
+#define	MAXSUMMARYVIEWNAMESZ	40 /*  number of words used to store the summary view name. */
+#define	AAPMAPSZ	8 /*  allow up to 128 asset profiles */
+#define	DEFAULT_DEFAULTDASHBOARD	"$SYSTEMALARMGROUPMODEL"	/*  Default configuration for "default dashboard" */
+
+
+#define	CONSOLENAME	1  /*  Console Name */
+#define	CONCSTNNUM	21  /*  Number of Stations */
+#define	CONSOLESTATUS	22  /*  Console Status */
+#define	CON_NOTCONFIG	0  /*  Not Configured */
+#define	CON_FAIL	1  /*  failed */
+#define	CON_MARGINAL	2  /*  Marginal */
+#define	CON_OK	3  /*  OK */
+#define	CON_NOSTATIONS	4  /*  No stations configured */
+#define	CON_UNKNOWN	5  /*  unknown */
+#define	CON_ENOPLG	25 /*  ! Enable operator logon */
+
+#define	CON_FLAGS3	156 /*  Selected crt flags 3 */
+#define	CON_ASSOCASSET	460 /*  Associated asset for the console */
+#define	CON_AUDENB	461 /*  AUDENB for console. Replicates to AUDENB in CRTTBL. */
+
+#define	CON_CRTCONALMSHOW	526 /*  Console Alarm Show capability map */
+/*                                               --------------------------------- */
+/*                                               !A!B!C!D!E!F!G!H!I!J!K!L!M!N!O!P! */
+/*                                               --------------------------------- */
+
+#define	CONASSETPROFILE	760 /*  Asset profile */
+#define	CONASSETPROFILEMAP	761 /*  Asset profile bitmap */
+#define	CONASSETPROFILEMINCHGLVL	769 /*  Minimum security level required to change the asset profile */
+#define	CONDEFAULTDASHBOARD_IND	770 /*  Default dashboard name index */
+
+
+/* refer crttbl_def flags3 options */
+/* 15 A - */
+/* 14 B - enable operator login */
+/* 13 C - enable IPOS trending */
+/* 12 D - enable audible 3 (urgent) */
+/* 11 E - enable audible 2 (high) */
+/* 10 F - enable audible 1 (low) */
+/*  9 G - use ATD for IPS */
+/*  8 H - enable LISTENER */
+/*  7 I - */
+/*  6 J - enable clear screen on idle timeout */
+/*  5 K - */
+/*  4 L - enable card image recall */
+/*  3 M - enable 2 line access event display */
+/*  2 N - keep last alarm display filter */
+/*  1 O - enable crt error iorb print */
+/*  0 P - enable crt fail alarm */
+
+#define	CON_FLAGS4	157 /*  Selected crt flags 4 */
+/*                                               --------------------------------- */
+/*                                               !A!B!C!D!E!F!G!H!I!J!K!L!M!N!O!P! */
+/*                                               --------------------------------- */
+/* refer crttbl_def flags4 options */
+/* 15 A - allow audible alarm when signed off */
+/* 14 B - Active Marginal Alarm */
+/* 13 C - Active Fail Alarm */
+
+#define	CON_MARGINAL_ALM	0x4000	 /*  field mask */
+#define	CON_FAILED_ALM	0x2000	 /*  perform on every pass */
+
+#define	CONCHGCTRL	352   /*  Change Control */
+#define	CONLVL3PSW	449   /*  Level 3 Password */
+#define	CONLVL4PSW	452   /*  Level 4 Password */
+#define	CONLVL5PSW	455   /*  Level 5 Password */
+
+
+	struct t_CONTBL {
+		/* sequence */
+		int2   CONName[MAXCONNAMESZ/2];       /*    1 Console Name */
+		int2   CONCStnNum;                    /*   21 Number of CStn Clients in Console */
+		int2   CONStatus;                     /*   22 Console Status */
+		int2   CON_nrmupd;                    /*   23 Console Normal Update rates */
+		int2   CON_fstupd;                    /*   24 Console Fast Update rates */
+		int2   CON_enoplg;                    /*   25 Console Enable Operator Logon */
+		int2   CON_crtipg[MAXSTARTUPPGSZ];    /*   26 Startup page name for Console */
+		int2   CON_flags3;                    /*  156 Selected flags from flag word 3 (refer crttbl) */
+		int2   CON_flags4;                    /*  157 Selected flags from flag word 4 (refer crttbl) */
+		int2   CON_crtpri;                    /*  158 Default log and alarm printers for Console */
+		int2   CON_crtpin;                    /*  159 Inhibit printing flags for Console */
+		int2   CON_crtcacm1[CAPABILITYMAPSZ]; /*  160 Asset capability map 1 (View Data) (refer crttbl) */
+		int2   CON_crtcacm2[CAPABILITYMAPSZ]; /*  224 Asset capability map 2 (Control Data) (refer crttbl) */
+		int2   CON_crtcacm3[CAPABILITYMAPSZ]; /*  288 Asset capability map 3 (View Alarms) (refer crttbl) */
+		int2   CONChgCtrl;                    /*  352 Control the changing of this record */
+		PNTNUM CONLedPnts[CRTNUMLEDPNTS];     /*  353 Points associated with Operator Keyboard LEDs */
+		int2   CON_lvl3psw[CONPSW_SZ];        /*  449 CON Level 3 Password */
+		int2   CON_lvl4psw[CONPSW_SZ];        /*  452 CON Level 4 Password */
+		int2   CON_lvl5psw[CONPSW_SZ];        /*  455 CON Level 5 Password */
+		int2   CON_fstkeyupd;                 /*  458 Console Fast Key Update rates */
+		int2   CON_defaultalarmtrend;         /*  459 Default alarm trend */
+		int2   CON_associatedasset;           /*  460 Console associated asset */
+		int2   CON_audenb;                    /*  461 AUDENB (refer crttbl) */
+		int2   CON_crtcacm4[CAPABILITYMAPSZ]; /*  462 Asset capability map 4 (Ack Alarms) (refer crttbl) */
+		int2   CON_crtconalmshow[CAPABILITYMAPSZ]; /*  526 Console Alarm Show capability map */
+		int2   CON_armp;                      /*  590 Console Alarm Routing Minimum Priority */
+		int2   CON_stbfile[CONSTB_SZ];       /*  591 STB file name */
+		int2   CON_TPSarea;                  /*  719 TPS area number */
+		int2   CON_defaultalarmview[MAXSUMMARYVIEWNAMESZ];  /*  720 default alarm view name */
+		int2   CONAssetProfile;              /*  760 Asset profile that provides this Console's assignment */
+		int2   CON_aapmap[AAPMAPSZ];         /*  761 Asset profile bitmap */
+		int2   CONAssetProfileMinChangeLvl;  /*  769 Minimum security level required to change the asset profile */
+		int2   CONDefaultDashboard[MAXSUMMARYVIEWNAMESZ]; /*  770 default system status dashboard tagname */
+		int2   spare810[CONTBLSZ-809];       /*  810 the rest of the record */
+	};
+/*                         * */
+#if	defined(COMMON_EXISTS)
+/*       type (t_CONTBL) GBcontbl(NUM_DIRECT_STATION) */
+/*       equivalence (CONTBL , GBcontbl) */
+#endif	
+
+#endif	

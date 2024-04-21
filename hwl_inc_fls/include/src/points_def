@@ -1,0 +1,681 @@
+#if	!defined(PNTALM_WORD)
+
+/*                    POINTS_DEF - point definitions */
+/*                    ------------------------------ */
+
+/************************************************************************ */
+/*****     COPYRIGHT 2008 - 2017    HONEYWELL INTERNATIONAL SARL     **** */
+/************************************************************************ */
+
+/*     REVISION: */
+/*         @(#)points_def	main.SVR_MASTERPROJ_Integration.R0930_Int.8 */
+
+/*     WARNING: */
+/*	These definitions are dependent on points.h structure definitions. */
+/*	They are declared here because they need to be consumed by more than */
+/*	just C code. They should only be modified inconjuction with points.h. */
+
+#if	!defined( POINT_SERVER )
+#if	!defined( HSC_POINT_SERVER )
+
+/*     INCLUDES: */
+#include	"src/dat000_def"
+#include	"src/ext000_def"
+#include	"src/cnt000_def"
+#include	"src/des000_def"
+
+
+/*   define PNTNUM size in words */
+
+#define	PNTNUMSZ	2
+#define	PNTNUM16SZ	1
+
+/*   define parameter number rangess */
+/*	fixed parameter numbers are allocated in dictionary.src as numbers 1 to 1000 */
+/*	point subtype parameter numbers (child class) are allocated in dictionary.src as numbers 1001 to 2000 */
+/*	flexibble parameters are allocated in param_create.c as numbers 32767 to 2001 */
+#define	PARAM_NUM_MIN	1
+#define	PARAM_NUM_MAX	32767
+#define	PARAM_NUM_MIN_FLEX	2001
+#define	PARAM_NUM_MAX_FLEX	32767
+
+/*   Options for the hsc_point_name_ex function */
+
+#define	TAGNAME_PREPEND_OWNER_IF_REMOTE_DUPLICATE	0
+#define	TAGNAME_NEVER_PREPEND_OWNER	1
+#define	TAGNAME_ALWAYS_PREPEND_OWNER	2
+
+/*   Options for the hsc_param_values_xxx function */
+
+#define	PUTVAL_READ_AFTER_WRITE	0x00010	
+#define	GETVAL_ACQUIRE_IF_OLD	0x00020	
+#define	AGGREGATE_OFFSET	0
+#define	LOCAL_OFFSET	1
+
+/*   Maximum point and paramater name and value string lengths */
+
+#define	MAX_POINT_NAME_LEN	PRMDEF_LENGTH(PRNAM)		/*  The maximum length of a point name */
+#define	MAX_PARAM_NAME_LEN	255			/*  The maximum length of a parameter name */
+#define	MAX_PARAM_VALUE_STRING_LEN	255			/*  The maximum string length that can be stored in a parameter value (DFD can only do this) */
+#define	MAX_PRE750_POINT_NAME_LEN	16			/*  The maximum length of a point name for servers prior to 750 */
+#define	PNT_ENTITYNAME_SZ	40			/*  Point entitiy name size */
+#define	MAX_ENTITYNAME_SZ	PNT_ENTITYNAME_SZ	/*  The maximum length of an entity name */
+#define	MAX_FULLNAME_SZ	200			/*  The maximum length of a fully qualified name */
+#define	MAX_BASETAGNAME_SZ	MAX_POINT_NAME_LEN	/*  The maximum length of the base tag name */
+#define	MAX_OWNERSTRING_SZ	PNT_ENTITYNAME_SZ	/*  The maximum length of the owner string in a pre-pended tag name */
+#define	MAX_PREPENDEDTAGNAME_SZ	(MAX_OWNERSTRING_SZ+1+MAX_BASETAGNAME_SZ) /*  The maximum length of a base tagname prepended with the owner */
+#define	MAX_POINT_DESC_LEN	PRMDEF_LENGTH(PRDES)		/*  The maximum string length that can be stored in the point description */
+#define	MAX_GUID_STRING_SZ	36			/*  Maximum number of characters for a GUID in string format */
+#define	MAX_PUBNAME_LEN	80                    /*  The maximum length of an activity public name */
+#define	MAX_RTU2020_VARNAME_LEN	160                   /*  The maximum length of an RTU2020 variable */
+
+/*   Character constants */
+
+#define	SYSPOINT_FIRSTCHAR	"$"		    /*  Reserved first character for sys points */
+#define	PNTSRV_OLD_POINTTYPE	"PointType"		    /*  A point server parameter 'PointType' was used in EBI R310 (780) */
+#define	PNTSRV_NEW_POINTTYPE	"UserPointType"		/*  Due to a clash with PointType in dictionary, was renamed to 'UserPointType' in 850 */
+#define	PRM_PUBNAME	"PUBNAME"	
+#define	PRM_DISPLAYSTATE	"DISPLAYSTATE"	
+
+/*   Delimiters */
+
+#define	TAGNAME_DELIM	":"		    /*  Delimiter for tag names */
+#define	FULLNAME_DELIM	"/"		    /*  Delimiter for fully qualified names */
+
+/*   Default search contexts to use when resolving a fully qualified name */
+
+#define	MAX_SEARCHCONTEXT_SZ	200
+#define	SEARCH_CONTEXT_DELIM	";"	
+#define	FULLNAME_SEARCH_CONTEXT	"/Assets"	
+
+/*   Offsets of the point structure header items (in words, 1 based) */
+
+#define	PNT_TYP	3
+#define	PNT_SIZE	4
+#define	PNT_PARENTS	5
+#define	PNT_CHILDREN	7
+#define	PNT_ALMCOUNTS	9
+#define	PNT_BBARRAY	11
+#define	PNT_FULLALMCOUNT	13
+#define	PNT_GUID	73
+#define	PNT_GUID_SZ	16
+#define	PNT_SUBTYPE	81
+#define	PNT_ITEMNUMBER	82
+#define	PNT_FLAGS	83
+#define	PNT_REMOTETYPE	84
+#define	PNT_OWNER	85
+#define	PNT_ASSOCCON	88
+#define	PNT_ENTITYNAME	89
+#define	PNT_CONNECTION	109
+#define	PNT_CONNECTION_COUNT	4
+#define	PNT_PRIMARY_CONNECTION_IDX	0
+
+/*   Sizes of the point structure header blocks (in words) */
+
+#define	PNTBLKSZ_STA	112
+#define	PNTBLKSZ_ANA	112
+#define	PNTBLKSZ_ACC	112
+#define	PNTBLKSZ_ACS	112
+#define	PNTBLKSZ_CDA	112
+#define	PNTBLKSZ_ASH	112
+
+/*   Offsets of parameter structures within a pareameter block (in words, 1 based) */
+
+#define	SCNbase	11    /*  get this value from */
+#define	ALMbase	69    /*  comments in points.h */
+
+/*	Dictionary constants for status parameter */
+
+#define	DICT_STATUS_RECORD_NUMBER	631
+#define	DICT_STATUS_MAX	6
+
+
+
+/*   Definitions for the PNTALM access method */
+
+/*   1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*  ----------------------------------------------------------------- */
+/*  |                            H|C|N|L|P|S|*|I|A|U|  pri  | subpri| */
+/*  ----------------------------------------------------------------- */
+
+#define	PNTALM_WORD	57
+#define	PNTALM_MAX_BIT_IDX	31
+#define	PNTALM_MAX_WIDTH	32
+
+#define	PNTALM_ALMSUBPRI_BIT	0
+#define	PNTALM_ALMSUBPRI_SZ	4
+#define	PNTALM_ALMSUBPRI_MASK	0x0000000F	
+#define	PNTALM_ALMPRI_BIT	4
+#define	PNTALM_ALMPRI_SZ	4
+#define	PNTALM_ALMPRI_MASK	0x000000F0	
+#define	PNTALM_UNACKN_BIT	8
+#define	PNTALM_UNACKN_SZ	1
+#define	PNTALM_UNACKN_MASK	0x00000100	
+/*               Bit 9 reserved for ACK. Do not use (used only by dsply and hwserverbridge). */
+#define	DSPLY_PNTALM_ACKED_BIT	9
+#define	DSPLY_PNTALM_ACKED_MASK	0x00000200	
+#define	PNTALM_INALM_BIT	10
+#define	PNTALM_INALM_SZ	1
+#define	PNTALM_INALM_MASK	0x00000400	
+/*               Bit 11 reserved. Do not use. */
+#define	PNTALM_SHELVED_BIT	12
+#define	PNTALM_SHELVED_SZ	1
+#define	PNTALM_SHELVED_MASK	0x00001000	
+#define	PNTALM_SUPPRESSED_BIT	13
+#define	PNTALM_SUPPRESSED_SZ	1
+#define	PNTALM_SUPPRESSED_MASK	0x00002000	
+#define	PNTALM_INALT_BIT	14
+#define	PNTALM_INALT_SZ	1
+#define	PNTALM_INALT_MASK	0x00004000	
+#define	PNTALM_UNACKN_ALT_BIT	15
+#define	PNTALM_UNACKN_ALT_SZ	1
+#define	PNTALM_UNACKN_ALT_MASK	0x00008000	
+#define	PNTALM_ACKED_ALT_BIT	16
+#define	PNTALM_ACKED_ALT_SZ	1
+#define	PNTALM_ACKED_ALT_MASK	0x00010000	
+#define	PNTALM_SHELVED_ALT_BIT	17
+#define	PNTALM_SHELVED_ALT_SZ	1
+#define	PNTALM_SHELVED_ALT_MASK	0x00020000	
+#define	PNTALM_DISABLED_ALT_BIT	18
+#define	PNTALM_DISABLED_ALT_SZ	1
+#define	PNTALM_DISABLED_ALT_MASK	0x00040000	
+
+
+/*   Point flags */
+
+#define	PNTFLG_AREAENABLED_BIT	0
+#define	PNTFLG_AREAENABLED_SZ	1
+#define	PNTFLG_AREAENABLED_MASK	0x0001	
+#define	PNTFLG_ISCOMPANY_BIT	1
+#define	PNTFLG_ISCOMPANY_SZ	1
+#define	PNTFLG_ISCOMPANY_MASK	0x0002	
+#define	PNTFLG_REDUNDANT_BIT	3
+#define	PNTFLG_REDUNDANT_SZ	1
+#define	PNTFLG_REDUNDANT_FULL_SZ	2		/*  covers PNTFLG_REDUNDANT_BIT and PNTFLG_REDUNDANTBACKUP_BIT */
+#define	PNTFLG_REDUNDANT_MASK	0x0008	
+#define	PNTFLG_REDUNDANTBACKUP_BIT	4
+#define	PNTFLG_REDUNDANTBACKUP_SZ	1
+#define	PNTFLG_REDUNDANTBACKUP_MASK	0x0010	
+#define	PNTFLG_ACTCREATEENABLED_BIT	5
+#define	PNTFLG_ACTCREATEENABLED_SZ	1
+#define	PNTFLG_ACTCREATEENABLED_MASK	0x0020	
+#define	PNTFLG_SUBLOOPLEVEL_BIT	6
+#define	PNTFLG_SUBLOOPLEVEL_SZ	1
+#define	PNTFLG_SUBLOOPLEVEL_MASK	0x0040	
+#define	PNTFLG_EXCLUDELICCOUNT_BIT	7
+#define	PNTFLG_EXCLUDELICCOUNT_SZ	1
+#define	PNTFLG_EXCLUDELICCOUNT_MASK	0x0080	
+#define	PNTFLG_TPSCDACOMBO_BIT	8
+#define	PNTFLG_TPSCDACOMBO_SZ	1
+#define	PNTFLG_TPSCDACOMBO_MASK	0x0100	
+#define	PNTFLG_DISCOVERYORDER_BIT	9		/*  Only relevant if bit 8 is set. 1 = TPN first */
+#define	PNTFLG_DISCOVERYORDER_SZ	1
+#define	PNTFLG_DISCOVERYORDER_MASK	0x0200	
+#define	PNTFLG_DISCOVERYORDER_CDAFIRST	0x0000	
+#define	PNTFLG_DISCOVERYORDER_TPSFIRST	0x0200	
+#define	PNTFLG_METHODSCOPE_BIT	10	/*  Only relevant if bit 8 is set. 1 = CDA Read Only */
+#define	PNTFLG_METHODSCOPE_SZ	1
+#define	PNTFLG_METHODSCOPE_MASK	0x0400	
+#define	PNTFLG_METHODSCOPE_ALL	0x0000	 /*  Everything via CDA */
+#define	PNTFLG_METHODSCOPE_READS	0x0400	 /*  Only reads via CDA (e.g. Subscription) */
+#define	PNTFLG_ALLTPSCDACOMBO_MASK	0x0700	 /*  Mask for all combo point bits */
+#define	PNTFLG_EQUIPMENT_BIT	11
+#define	PNTFLG_EQUIPMENT_SZ	1
+#define	PNTFLG_EQUIPMENT_MASK	0x0800	
+
+/*   SCADA parameter quality (also know as xxStatus) */
+
+#define	xxStatus_OffScan	0x00000001	  /*  bit 0 - off scan */
+#define	xxStatus_InError	0x00000002	  /*  bit 1 - in error */
+#define	xxStatus_Unreasonable	0x00000004	  /*  bit 2 - unresonable (out of range)       (ANA PV only) */
+#define	xxStatus_ControlInhibit	0x00000008	  /*  bit 3 - control inhibit */
+#define	xxStatus_ManualPV	0x00000010	  /*  bit 4 - manual PV                        (PV only) */
+#define	xxStatus_AlarmDisabled	0x00000020	  /*  bit 5 - alarming and journaling disabled (PV only) */
+#define	xxStatus_JournalOnly	0x00000040	  /*  bit 6 - alarming disabled (journal only) (PV only) */
+#define	xxStatus_InAlarm	0x00000080	  /*  bit 7 - in alarm (not filtered by SOR)   (PV only) */
+#define	xxStatus_IsStale	0x00000100	  /*  bit 8 - is stale */
+#define	xxStatus_Status_mask	0x0000ffff	  /*  bits  0-15 - xxStatus */
+#define	xxStatus_OPCqual_mask	0x0000ffff	  /*  bits 16-31 - OPC DA quality */
+#define	xxStatus_OPCqual_bit	16
+
+/*   System Entity point sub-types */
+
+/*     see def/parameters */
+
+
+/*   Model types */
+
+#define	MDL_ASSETS	1
+#define	MDL_ALARMGROUPS	2
+#define	MDL_SYSTEM	3
+#define	MDL_CANE	4
+#define	MDL_ORGANIZATIONS	5
+#define	MDL_ONTOLOGY	6
+#define	MDL_ACTIVITIES	7
+#define	MDL_SYSTEMALARMGROUPS	8
+
+/*   Point relationship direction values */
+
+#define	PNTRELDIR_INVALID	0
+#define	PNTRELDIR_PARENT	1
+#define	PNTRELDIR_CHILD	2
+
+/*   Meaning of the item number for Console Station Client points */
+
+#define	CSTNCLT_ITEMNUM_CONSTNNUM_BIT	8
+#define	CSTNCLT_ITEMNUM_CONSTNNUM_SZ	8
+#define	CSTNCLT_ITEMNUM_CONSTNNUM_MASK	0xFF00	
+#define	CSTNCLT_ITEMNUM_CLIENTNUM_BIT	0
+#define	CSTNCLT_ITEMNUM_CLIENTNUM_SZ	8
+#define	CSTNCLT_ITEMNUM_CLIENTNUM_MASK	0x00FF	
+
+#endif	
+#endif	
+
+
+/*   SYS point status states */
+
+#define	SYSPNT_STATUS_SIMULATION	6
+#define	SYSPNT_STATUS_GOOD	5
+#define	SYSPNT_STATUS_MARG	4
+#define	SYSPNT_STATUS_FAIL	3
+#define	SYSPNT_STATUS_DISABLED	2
+#define	SYSPNT_STATUS_NONE	1
+#define	SYSPNT_STATUS_UNKNOWN	0
+
+
+#if	!defined( POINT_SERVER )
+#if	!defined( HSC_POINT_SERVER )
+
+/*   CDA point subtype ranges by subsystem */
+
+#define	CDASUBTYPE_CEE_MIN	001     /*  CEE subsystem low range */
+#define	CDASUBTYPE_CEE_MAX	199     /*  CEE subsystem high range */
+#define	CDASUBTYPE_SM_MIN	700     /*  SM (Safety Manager) subsystem low range */
+#define	CDASUBTYPE_SM_MAX	799     /*  SM (Safety Manager) subsystem low range */
+#define	CDASUBTYPE_PMD_MIN	800     /*  PMD subsystem low range */
+#define	CDASUBTYPE_PMD_MAX	899     /*  PMD subsystem low range */
+#define	CDASUBTYPE_QCS_MIN	900     /*  QCS subsystem low range */
+#define	CDASUBTYPE_QCS_MAX	999     /*  QCS subsystem low range */
+
+/*   CDA point subtype for Unknown HW Device */
+
+#define	CDAUNKNOWNDEVICE	14
+
+/*   HSC_PARAM_RANGE_EX FLAGS */
+
+#define	PARAM_RANGELIMITS_NOFLAGS	0x00000000	
+#define	PARAM_RANGELIMITS_DEVICE	0x00000001	
+#define	PARAM_RANGE_IGNORE_ENUMS	0x00000002	
+#define	PARAM_RANGELIMITS_KEEP_M4_NAN	0x00000004	
+
+/*   HSC_POINT_CREATE_EX FLAGS */
+
+#define	POINTCREATEFLAGS_NOFLAGS	0x00000000	
+#define	POINTCREATEFLAGS_KEEPLOCKED	0x00000001	         /*  Keep the point locked after the hsc_point_create_ex function returns. Caller must unlock the point. */
+#define	POINTCREATEFLAGS_EXCLUDELICCOUNT	0x00000002	         /*  Exclude this point from the licence count check. */
+#define	POINTCREATEFLAGS_EQUIPMENT	0x00000004	         /*  Equipment point. */
+
+
+
+/*   FORTRAN Function Prototypes */
+
+/*       PNTNUM  HSC_POINT_NUMBER			;* get point's number */
+/*       PNTNUM  HSC_POINT_NUMBER_EX		;* get point's number */
+/*       PNTNUM  HSC_NUMBER_OF_POINTS		;* get maximum number of points */
+/*       PNTNUM  HSC_POINT_FIND_FREE		;* find a free point record */
+/*       PNTNUM  HSC_EM_GETOWNERPOINT		;* returns the owner for a point */
+/*       PNTNUM  HSC_EM_GETDEFAULTOWNER		;* returns the default owner for a point */
+/*       PNTNUM  HSC_EM_GETDEFAULTOWNEREX		;* returns the default owner for a point */
+/*       PNTNUM  HSC_EM_GETSYSPOINT		;* returns the point number for a particular point constant */
+/*       integer(2) HSC_EM_GETOWNERSTRING          ;* returns the point name of the owner point */
+/*       integer(2) HSC_EM_GETSYSPNTTAGNAME        ;* returns the point name of a system point */
+/*       PNTNUM  HSC_GET_UNASSIGNED_ITEMS_POINT	;* returns the point number of the unassigned items point */
+/*       PNTNUM  HSC_GET_ROOT_ASSET_POINT		;* returns the point number of the root asset point */
+/*       PNTNUM  HSC_GET_AREAENABLED_POINT		;* get the point number of an area enabled point */
+/*       PNTNUM  HSC_SET_ALM_POINTNUM		;* returns point number of alarm */
+/*       integer(2) HSC_GETVAL_ASCI		;* get point ascii value */
+/*       integer(2) HSC_GETVAL_HIST		;* get point hsitory value */
+/*       integer(2) HSC_GETVAL_NUMB		;* get point value */
+/*       integer(2) HSC_PUTVAL_ASCI		;* get point ascii value */
+/*       integer(2) HSC_PUTVAL_HIST		;* get point hsitory value */
+/*       integer(2) HSC_PUTVAL_NUMB		;* get point value */
+/*       integer(2) HSC_PUTVAL_NUMB_PRIORITY	;* put point value with control command and residual priority */
+/*       integer(2) HSC_GETI2			;* get point int2 value */
+/*       integer(2) HSC_GETI4			;* get point int4 value */
+/*       integer(2) HSC_GETRL			;* get point real value */
+/*       integer(2) HSC_GETR8			;* get point dble value */
+/*       integer(2) HSC_GETCH			;* get point char value */
+/*       integer(2) HSC_PUTI2			;* put point int2 value */
+/*       integer(2) HSC_PUTI4			;* put point int4 value */
+/*       integer(2) HSC_PUTRL			;* put point real value */
+/*       integer(2) HSC_PUTR8			;* put point dble value */
+/*       integer(2) HSC_PUTCH			;* put point char value */
+/*       integer(2) HSC_GETI2_PARAM		;* get point int2 value from parameter */
+/*       integer(2) HSC_GETI4_PARAM		;* get point int4 value from parameter */
+/*       integer(2) HSC_GETI8_PARAM		;* get point int8 value from parameter */
+/*       integer(2) HSC_GETRL_PARAM		;* get point real value from parameter */
+/*       integer(2) HSC_GETR8_PARAM		;* get point dble value from parameter */
+/*       integer(2) HSC_GETCH_PARAM		;* get point char value from parameter */
+/*       integer(2) HSC_GETI2S_PARAM		;* get point multiwords from parameter */
+/*       integer(2) HSC_PUTI2_PARAM		;* put point int2 value to parameter */
+/*       integer(2) HSC_PUTI4_PARAM		;* put point int4 value to parameter */
+/*       integer(2) HSC_PUTI8_PARAM		;* put point int8 value to parameter */
+/*       integer(2) HSC_PUTRL_PARAM		;* put point real value to parameter */
+/*       integer(2) HSC_PUTR8_PARAM		;* put point dble value to parameter */
+/*       integer(2) HSC_PUTCH_PARAM		;* put point char value to parameter */
+/*       integer(2) HSC_PUTI2S_PARAM		;* put point multiwords to parameter */
+/*       integer(2) HSC_PUTDT_PARAM		;* put point value by data type to parameter */
+/*       integer(2) HSC_GETI2_STRUCT		;* get point int2 value from struct area */
+/*       integer(2) HSC_GETI4_STRUCT		;* get point int4 value from struct area */
+/*       integer(2) HSC_GETBITS_STRUCT		;* get point bit  value from struct area */
+/*       integer(2) HSC_GETBYTES_STRUCT		;* get point byte value from struct area */
+/*       integer(2) HSC_GETCH_STRUCT		;* get point char value from struct area */
+/*       integer(2) HSC_PUTI2_STRUCT		;* put point int2 value to struct area */
+/*       integer(2) HSC_PUTI4_STRUCT		;* put point int4 value to struct area */
+/*       integer(2) HSC_PUTBITS_STRUCT		;* put point bit  value to struct area */
+/*       integer(2) HSC_PUTBYTES_STRUCT		;* put point byte value to struct area */
+/*       integer(2) HSC_PUTCH_STRUCT		;* put point char value to struct area */
+/*       integer(2) HSC_PAS			;* scan+process address special */
+/*       integer(2) HSC_PASW			;* scan+process address special and wait */
+/*       integer(2) HSC_PPAS			;* process point alarm special */
+/*       integer(2) HSC_PPASW			;* process point alarm special and wait */
+/*       integer(2) HSC_PPOV			;* process point old value special */
+/*       integer(2) HSC_PPOVW			;* process point old value special and wait */
+/*       integer(2) HSC_PPS			;* scan+process point special */
+/*       integer(2) HSC_PPSW			;* scan+process point special and wait */
+/*       integer(2) HSC_PPV			;* process point value */
+/*       integer(2) HSC_PPVW			;* process point value and wait */
+/*       integer(2) HSC_SAS			;* scan address special (and process if changed) */
+/*       integer(2) HSC_SASW			;* scan address special (and process if changed) and wait */
+/*       integer(2) HSC_SDS			;* scan diagnostic special */
+/*       integer(2) HSC_SDSW			;* scan diagnostic special and wait */
+/*       integer(2) HSC_SPS			;* scan point special (and process if changed) */
+/*       integer(2) HSC_SPSW			;* scan point special (and process if changed) and wait */
+/*       integer(2) HSC_SPV			;* process point value (if changed) */
+/*       integer(2) HSC_SPVW			;* process point value (if changed) and wait */
+/*       integer(4) hsc_gda_param_get_ctrl_confirm ;* get parameter control confirmation value */
+
+
+#endif	
+#endif	
+
+
+
+/*        PRMDEF - Point parameter definitions are integer(4) (32 bits) containing */
+/*                 the following fields: */
+
+/*   bits +31---28+-----24+-----20------16+-----12+----------------------0+ */
+/*        !   -   !   -   ! width !  bit  ! file  !          word         ! */
+/*        +-------+-------+-------+-------+-------+-----------------------+ */
+
+/*               file - file (0="DAT",1="EXT",2="CNT",3="DES",15="UDSP") */
+/*               word - word offset in file (0-4095) */
+/*                bit - base bit of field (0-15) */
+/*              width - width of field (0-15) + 1 */
+/*             length - bit+width fields (0-255) + 1 */
+/*                       number of chars for char data */
+/*                       number of int2s for int2 data */
+
+/*  NOTE: */
+/*	For FORTRAN, you must define USE_PRMDEF to make these routines available. */
+/*       $define USE_PRMDEF */
+
+#if	defined( USE_PRMDEF )
+/*       PRMDEF PRMDEF_X , PRMDEF_Y */
+/*       integer(2) PRMDEF_WORD, PRMDEF_FILE, PRMDEF_BIT, PRMDEF_WIDTH, PRMDEF_LENGTH */
+/*       integer(2) PRMDEF_SET, PRMDEF_CLR */
+/*       integer(4) PRMDEF_BY_BIT, PRMDEF_BY_CHAR, PRMDEF_BY_INT2, PRMDEF_BY_REAL, PRMDEF_BY_DBLE */
+/*       PRMDEF_WORD  (PRMDEF_X) = iand(      PRMDEF_X     ,z'0FFF') */
+/*       PRMDEF_FILE  (PRMDEF_X) = iand(ishft(PRMDEF_X,-12),z'000f') */
+/*       PRMDEF_BIT   (PRMDEF_X) = iand(ishft(PRMDEF_X,-16),z'000f') */
+/*       PRMDEF_WIDTH (PRMDEF_X) = iand(ishft(PRMDEF_X,-20),z'000f') + 1 */
+/*       PRMDEF_LENGTH(PRMDEF_X) = iand(ishft(PRMDEF_X,-16),z'00ff') + 1 */
+/*       PRMDEF_SET   (PRMDEF_X) = ishft(ishft(1,PRMDEF_WIDTH(PRMDEF_X)-1),PRMDEF_BIT(PRMDEF_X)) */
+/*       PRMDEF_CLR   (PRMDEF_X) =	not(PRMDEF_SET(PRMDEF_X)) */
+/*       PRMDEF_BY_BIT(PRMDEF_X,PRMDEF_Y) = PRMDEF_X + ishft(mod(PRMDEF_Y*PRMDEF_WIDTH(PRMDEF_X),16),16) +          (PRMDEF_Y*PRMDEF_WIDTH(PRMDEF_X)/16) */
+/*       PRMDEF_BY_CHAR (PRMDEF_X,PRMDEF_Y) = PRMDEF_X + (PRMDEF_Y*PRMDEF_LENGTH(PRMDEF_X)+1)/2 */
+/*       PRMDEF_BY_INT2 (PRMDEF_X,PRMDEF_Y) = PRMDEF_X + PRMDEF_Y */
+/*       PRMDEF_BY_REAL (PRMDEF_X,PRMDEF_Y) = PRMDEF_X + PRMDEF_Y*2 */
+/*       PRMDEF_BY_DBLE (PRMDEF_X,PRMDEF_Y) = PRMDEF_X + PRMDEF_Y*4 */
+
+/* dummy routine to make all the real ones look used, so we get 1 warning instead of many. */
+/*     "This statement function has not been used.   [PRMDEF_USED]" */
+/*       integer(4) PRMDEF_USED */
+/*       PRMDEF_USED (PRMDEF_X,PRMDEF_Y) = PRMDEF_WORD(PRMDEF_X) + PRMDEF_FILE(PRMDEF_X) + PRMDEF_CLR(PRMDEF_X) + PRMDEF_BY_BIT (PRMDEF_X,PRMDEF_Y) + PRMDEF_BY_CHAR(PRMDEF_X,PRMDEF_Y) + PRMDEF_BY_INT2(PRMDEF_X,PRMDEF_Y) + PRMDEF_BY_REAL(PRMDEF_X,PRMDEF_Y) + PRMDEF_BY_DBLE(PRMDEF_X,PRMDEF_Y) */
+#endif	
+
+
+#define PRMDEF_WORD(x)	 ( (x    ) & 0xFFF)
+#define PRMDEF_FILE(x)	 ( (x>>12) & 0x0F)
+#define PRMDEF_BIT(x) 	 ( (x>>16) & 0x0F)
+#define PRMDEF_WIDTH(x)	 (((x>>20) & 0x0F) + 1)
+#define PRMDEF_LENGTH(x)       (((x>>16) & 0xFF) + 1)
+#define PRMDEF_MASK(x) 	 ((1<<PRMDEF_WIDTH(x))-1)
+#define PRMDEF_SET(x) 	 (PRMDEF_MASK(x)<<PRMDEF_BIT(x))
+#define PRMDEF_CLR(x) 	 (~PRMDEF_SET(x))
+#define PRMDEF_BY_BIT(x,i) 	 (x + ((((i)*PRMDEF_WIDTH(x))%16)<<16) \
+				    + ((((i)*PRMDEF_WIDTH(x))/16)    ))
+#define PRMDEF_BY_CHAR(x,i) 	 (x + ((i)*PRMDEF_LENGTH(x)+1)/2)
+#define PRMDEF_BY_LEN(x,i) 	 (x + ((i)*PRMDEF_LENGTH(x)))
+#define PRMDEF_BY_INT2(x,i)	 (x +  (i))
+#define PRMDEF_BY_REAL(x,i)	 (x +  (i)*2)
+#define PRMDEF_BY_DBLE(x,i)	 (x +  (i)*4)
+#define PRMDEF_MAKEB(f,wd,b,w) ((w>0)? (((f)<<12) | (wd) | ((b)<<16) | (((w-1)&0xf)<<20)): (((f)<<12) | (wd) | ((b)<<16)))
+#define PRMDEF_MAKEA(f,wd,l)   ((l>0)? (((f)<<12) | (wd) | (((l-1)&0xff)<<16)): (((f)<<12) | (wd)))
+#define PRMDEF_ADJ_BIT_WIDTH(x,b,w)	 ((x & 0xFF00FFFF) | (((b)&0xf)<<16) | (((w)&0xf)<<20) )
+
+#define xxStatus_OPCqual(s)	 ( ((s)>>xxStatus_OPCqual_bit) & xxStatus_OPCqual_mask )
+#define xxStatus_Status(s)	 (  (s) & xxStatus_Status_mask )
+#define xxStatus_make(q,s)	 ( ((q)<<xxStatus_OPCqual_bit) | ((s)&xxStatus_Status_mask ) )
+
+
+
+/* PRMDEF for items for scanned parameters (see structure in points.h) */
+
+/*       bit fields       geti2()      $prmdefb(file, word, bit, width) */
+/*       char fields      getch()      $prmdefa(file, word, number of bytes) */
+/*       array fields     geti2s()     $prmdefa(file, word, number of words) */
+/*       other fields                  $prmdefb(file, word,   0,     0) */
+
+#define	SCNmethod	PRMDEF_MAKEB(15,4,0,16) /*  parameter method */
+#define	SCNdataType	PRMDEF_MAKEB(15,5,0,16) /*  parameter data type */
+#define	SCNBBindex	PRMDEF_MAKEB(15,9,0,0)  /*  parameter BB index */
+
+#define	SCNaddressPKT	PRMDEF_MAKEA(15,SCNbase+ 0,   6) /*  address to be scanned */
+#define	SCNaddressTYP	PRMDEF_MAKEB(15,SCNbase+ 0,12,4) /*  address type */
+#define	SCNaddressPER	PRMDEF_MAKEB(15,SCNbase+ 1, 4,4) /*  address period */
+#define	SCNaddressFMT	PRMDEF_MAKEB(15,SCNbase+ 1, 8,8) /*  address read format */
+#define	SCNaddressADR	PRMDEF_MAKEB(15,SCNbase+ 2,0,16) /*  address read address */
+#define	SCNaddressWFMT	PRMDEF_MAKEB(15,SCNbase+ 3, 8,8) /*  address write format */
+#define	SCNaddressWADR	PRMDEF_MAKEB(15,SCNbase+ 4,0,16) /*  address write address */
+#define	SCNaddressRTU	PRMDEF_MAKEB(15,SCNbase+ 5,0,16) /*  address RTU */
+#define	SCNenumValue	PRMDEF_MAKEB(15,SCNbase+ 6, 0,4) /*  enumeration value */
+#define	SCNenumField	PRMDEF_MAKEB(15,SCNbase+ 6, 8,4) /*  field value */
+#define	SCNenumMax	PRMDEF_MAKEB(15,SCNbase+ 7, 0,4) /*  range high */
+#define	SCNenumReverse	PRMDEF_MAKEB(15,SCNbase+ 7, 8,4) /*  reverse mask */
+#define	SCNenumTransitions	PRMDEF_MAKEB(15,SCNbase+ 7,15,1) /*  alarm transitions */
+#define	SCNenumTarget0	PRMDEF_MAKEB(15,SCNbase+ 8, 0,4) /*  target state for states 0 */
+#define	SCNenumTarget1	PRMDEF_MAKEB(15,SCNbase+ 8, 4,4) /*  target state for states 1 */
+#define	SCNenumTarget2	PRMDEF_MAKEB(15,SCNbase+ 8, 8,4) /*  target state for states 2 */
+#define	SCNenumTarget3	PRMDEF_MAKEB(15,SCNbase+ 8,12,4) /*  target state for states 3 */
+#define	SCNenumTarget4	PRMDEF_MAKEB(15,SCNbase+ 9, 0,4) /*  target state for states 4 */
+#define	SCNenumTarget5	PRMDEF_MAKEB(15,SCNbase+ 9, 4,4) /*  target state for states 5 */
+#define	SCNenumTarget6	PRMDEF_MAKEB(15,SCNbase+ 9, 8,4) /*  target state for states 6 */
+#define	SCNenumTarget7	PRMDEF_MAKEB(15,SCNbase+ 9,12,4) /*  target state for states 7 */
+#define	SCNenumSta0Desc	PRMDEF_MAKEA(15,SCNbase+10,   8) /*  state 0 descriptor */
+#define	SCNenumSta1Desc	PRMDEF_MAKEA(15,SCNbase+14,   8) /*  state 1 descriptor */
+#define	SCNenumSta2Desc	PRMDEF_MAKEA(15,SCNbase+18,   8) /*  state 2 descriptor */
+#define	SCNenumSta3Desc	PRMDEF_MAKEA(15,SCNbase+22,   8) /*  state 3 descriptor */
+#define	SCNenumSta4Desc	PRMDEF_MAKEA(15,SCNbase+26,   8) /*  state 4 descriptor */
+#define	SCNenumSta5Desc	PRMDEF_MAKEA(15,SCNbase+30,   8) /*  state 5 descriptor */
+#define	SCNenumSta6Desc	PRMDEF_MAKEA(15,SCNbase+34,   8) /*  state 6 descriptor */
+#define	SCNenumSta7Desc	PRMDEF_MAKEA(15,SCNbase+38,   8) /*  state 7 descriptor */
+#define	SCNcharValue	PRMDEF_MAKEA(15,SCNbase+ 6,  64) /*  string value */
+#define	SCNnumbValue	PRMDEF_MAKEB(15,SCNbase+ 6,0, 0) /*  numeric value */
+#define	SCNnumbField	PRMDEF_MAKEB(15,SCNbase+10,0, 0) /*  field value */
+#define	SCNnumbEulo	PRMDEF_MAKEB(15,SCNbase+14,0, 0) /*  engineering units low */
+#define	SCNnumbEuhi	PRMDEF_MAKEB(15,SCNbase+18,0, 0) /*  engineering units high */
+#define	SCNnumbBias	PRMDEF_MAKEB(15,SCNbase+22,0, 0) /*  bias */
+#define	SCNnumbScale	PRMDEF_MAKEB(15,SCNbase+26,0, 0) /*  scale */
+#define	SCNnumbEuDesc	PRMDEF_MAKEA(15,SCNbase+30,   8) /*  engineering units descriptor */
+#define	SCNnumbDriftDB	PRMDEF_MAKEB(15,SCNbase+34, 0,4) /*  drift deadband */
+#define	SCNnumbAlarmDB	PRMDEF_MAKEB(15,SCNbase+34, 4,4) /*  alarm deadband */
+#define	SCNnumbContrDB	PRMDEF_MAKEB(15,SCNbase+34, 8,4) /*  control deadband */
+#define	SCNlastScnTime	PRMDEF_MAKEB(15,SCNbase+42,0, 0) /*  last scanned time */
+#define	SCNlastPrcTime	PRMDEF_MAKEB(15,SCNbase+46,0, 0) /*  last processed time */
+#define	SCNpvAlgoBlock	PRMDEF_MAKEB(15,SCNbase+50,0, 0) /*  PV algo block */
+#define	SCNactAlgoBlock	PRMDEF_MAKEB(15,SCNbase+52,0, 0) /*  Action algo block */
+#define	SCNpvAlgo	PRMDEF_MAKEB(15,SCNbase+54, 0,8) /*  PV algo */
+#define	SCNactAlgo	PRMDEF_MAKEB(15,SCNbase+54, 8,8) /*  Action algo */
+#define	SCNassocParam	PRMDEF_MAKEB(15,SCNbase+55,0,16) /*  associated parameter */
+#define	SCNcontrolLevel	PRMDEF_MAKEB(15,SCNbase+56, 0,8) /*  control level */
+#define	SCNcontrolAuthorized	PRMDEF_MAKEB(15,SCNbase+56, 8,1) /*  control authorized */
+#define	SCNalarmExternChange	PRMDEF_MAKEB(15,SCNbase+56, 9,1) /*  alarm external change */
+#define	SCNnumbUseBS	PRMDEF_MAKEB(15,SCNbase+56,10,1) /*  use Bias and Scale */
+#define	SCNManualValue	PRMDEF_MAKEB(15,SCNbase+56,11,1) /*  manual value */
+#define	SCNReverseValue	PRMDEF_MAKEB(15,SCNbase+56,12,1) /*  reverse value */
+#define	SCNClampValue	PRMDEF_MAKEB(15,SCNbase+56,13,1) /*  clamp value */
+#define	SCNInitializing	PRMDEF_MAKEB(15,SCNbase+56,14,1) /*  initializing */
+#define	SCNDynScnDisabled	PRMDEF_MAKEB(15,SCNbase+56,15,1) /*  dynamic scanning disabled */
+#define	SCNopcValueQuality	PRMDEF_MAKEB(15,SCNbase+57, 0,8) /*  OPC DA quality for value */
+#define	SCNopcFieldQuality	PRMDEF_MAKEB(15,SCNbase+57, 8,8) /*  OPC DA quality for field value */
+
+#define	SCNRateLimit	PRMDEF_MAKEB(15,ALMbase+ 0,0, 0) /*  rate alarm limit */
+#define	SCNLoLimit	PRMDEF_MAKEB(15,ALMbase+ 4,0, 0) /*  low alarm limit */
+#define	SCNHiLimit	PRMDEF_MAKEB(15,ALMbase+ 8,0, 0) /*  high alarm limit */
+#define	SCNLoLoLimit	PRMDEF_MAKEB(15,ALMbase+12,0, 0) /*  low low alarm limit */
+#define	SCNHiHiLimit	PRMDEF_MAKEB(15,ALMbase+16,0, 0) /*  high high alarm limit */
+#define	SCNXtLoLimit	PRMDEF_MAKEB(15,ALMbase+20,0, 0) /*  transmitter low alarm limit */
+#define	SCNXtHiLimit	PRMDEF_MAKEB(15,ALMbase+24,0, 0) /*  transmitter high alarm limit */
+#define	SCNRateOnDelay	PRMDEF_MAKEB(15,ALMbase+32,0,14) /*  rate alarm on delay */
+#define	SCNLoOnDelay	PRMDEF_MAKEB(15,ALMbase+33,0,14) /*  low alarm on delay */
+#define	SCNHiOnDelay	PRMDEF_MAKEB(15,ALMbase+34,0,14) /*  high alarm on delay */
+#define	SCNLoLoOnDelay	PRMDEF_MAKEB(15,ALMbase+35,0,14) /*  low low on delay */
+#define	SCNHiHiOnDelay	PRMDEF_MAKEB(15,ALMbase+36,0,14) /*  high high on delay */
+#define	SCNXtLoOnDelay	PRMDEF_MAKEB(15,ALMbase+37,0,14) /*  transmitter low on delay */
+#define	SCNXtHiOnDelay	PRMDEF_MAKEB(15,ALMbase+38,0,14) /*  transmitter high on delay */
+#define	SCNRateOffDelay	PRMDEF_MAKEB(15,ALMbase+40,0,14) /*  rate alarm off delay */
+#define	SCNLoOffDelay	PRMDEF_MAKEB(15,ALMbase+41,0,14) /*  low alarm off delay */
+#define	SCNHiOffDelay	PRMDEF_MAKEB(15,ALMbase+42,0,14) /*  high alarm off delay */
+#define	SCNLoLoOffDelay	PRMDEF_MAKEB(15,ALMbase+43,0,14) /*  low low off delay */
+#define	SCNHiHIOffDelay	PRMDEF_MAKEB(15,ALMbase+44,0,14) /*  high high off delay */
+#define	SCNXtLoOffDelay	PRMDEF_MAKEB(15,ALMbase+45,0,14) /*  transmitter low off delay */
+#define	SCNXtHiOffDelay	PRMDEF_MAKEB(15,ALMbase+46,0,14) /*  transmitter high off delay */
+#define	SCNinRateOnDelay	PRMDEF_MAKEB(15,ALMbase+32,15,1) /*  in rate alarm on delay */
+#define	SCNinLoOnDelay	PRMDEF_MAKEB(15,ALMbase+33,15,1) /*  in low alarm on delay */
+#define	SCNinHiOnDelay	PRMDEF_MAKEB(15,ALMbase+34,15,1) /*  in high alarm on delay */
+#define	SCNinLoLoOnDelay	PRMDEF_MAKEB(15,ALMbase+35,15,1) /*  in low low on delay */
+#define	SCNinHiHiOnDelay	PRMDEF_MAKEB(15,ALMbase+36,15,1) /*  in high high on delay */
+#define	SCNinXtLoOnDelay	PRMDEF_MAKEB(15,ALMbase+37,15,1) /*  in transmitter low on delay */
+#define	SCNinXtHiOnDelay	PRMDEF_MAKEB(15,ALMbase+38,15,1) /*  in transmitter high on delay */
+#define	SCNinRateOffDelay	PRMDEF_MAKEB(15,ALMbase+40,15,1) /*  in rate alarm off delay */
+#define	SCNinLoOffDelay	PRMDEF_MAKEB(15,ALMbase+41,15,1) /*  in low alarm off delay */
+#define	SCNinHiOffDelay	PRMDEF_MAKEB(15,ALMbase+42,15,1) /*  in high alarm off delay */
+#define	SCNinLoLoOffDelay	PRMDEF_MAKEB(15,ALMbase+43,15,1) /*  in low low off delay */
+#define	SCNinHiHiOffDelay	PRMDEF_MAKEB(15,ALMbase+44,15,1) /*  in high high off delay */
+#define	SCNinXtLoOffDelay	PRMDEF_MAKEB(15,ALMbase+45,15,1) /*  in transmitter low off delay */
+#define	SCNinXtHiOffDelay	PRMDEF_MAKEB(15,ALMbase+46,15,1) /*  in transmitter high off delay */
+#define	SCNRatePriority	PRMDEF_MAKEB(15,ALMbase+48, 0,4) /*  rate alarm priority */
+#define	SCNLoPriority	PRMDEF_MAKEB(15,ALMbase+48, 4,4) /*  low alarm priority */
+#define	SCNHiPriority	PRMDEF_MAKEB(15,ALMbase+48, 8,4) /*  high alarm priority */
+#define	SCNLoLoPriority	PRMDEF_MAKEB(15,ALMbase+48,12,4) /*  low low alarm priority */
+#define	SCNHiHiPriority	PRMDEF_MAKEB(15,ALMbase+49, 0,4) /*  high high alarm priority */
+#define	SCNXtLoPriority	PRMDEF_MAKEB(15,ALMbase+49, 4,4) /*  transmitter low alarm priority */
+#define	SCNXtHiPriority	PRMDEF_MAKEB(15,ALMbase+49, 8,4) /*  transmitter high alarm priority */
+#define	SCNRateSubPriority	PRMDEF_MAKEB(15,ALMbase+50, 0,4) /*  rate alarm sub priority */
+#define	SCNLoSubPriority	PRMDEF_MAKEB(15,ALMbase+50, 4,4) /*  low alarm sub priority */
+#define	SCNHiSubPriority	PRMDEF_MAKEB(15,ALMbase+50, 8,4) /*  high alarm sub priority */
+#define	SCNLoLoSubPriority	PRMDEF_MAKEB(15,ALMbase+50,12,4) /*  low low alarm sub priority */
+#define	SCNHiHiSubPriority	PRMDEF_MAKEB(15,ALMbase+51, 0,4) /*  high high alarm sub priority */
+#define	SCNXtLoSubPriority	PRMDEF_MAKEB(15,ALMbase+51, 4,4) /*  transmitter low alarm sub priority */
+#define	SCNXtHiSubPriority	PRMDEF_MAKEB(15,ALMbase+51, 8,4) /*  transmitter high alarm sub priority */
+#define	SCNalmenabledmap	PRMDEF_MAKEB(15,ALMbase+52,0,16) /*  alarm enabled map (1 bit per alarm) */
+#define	SCNRateEnabled	PRMDEF_MAKEB(15,ALMbase+52, 0,1) /*  rate alarm enabled */
+#define	SCNLoEnabled	PRMDEF_MAKEB(15,ALMbase+52, 1,1) /*  low alarm enabled */
+#define	SCNHiEnabled	PRMDEF_MAKEB(15,ALMbase+52, 2,1) /*  high alarm enabled */
+#define	SCNLoLoEnabled	PRMDEF_MAKEB(15,ALMbase+52, 3,1) /*  low low alarm enabled */
+#define	SCNHiHiEnabled	PRMDEF_MAKEB(15,ALMbase+52, 4,1) /*  high high alarm enabled */
+#define	SCNXtLoEnabled	PRMDEF_MAKEB(15,ALMbase+52, 5,1) /*  transmitter low alarm enabled */
+#define	SCNXtHiEnabled	PRMDEF_MAKEB(15,ALMbase+52, 6,1) /*  transmitter high alarm enabled */
+#define	SCNRsLoEnabled	PRMDEF_MAKEB(15,ALMbase+52, 7,1) /*  unreasonable low alarm enabled */
+#define	SCNRsHiEnbled	PRMDEF_MAKEB(15,ALMbase+52, 8,1) /*  unreasonable high alarm enabled */
+#define	SCNalmactivemap	PRMDEF_MAKEB(15,ALMbase+53,0,16) /*  alarm active map (1 bit per alarm) */
+#define	SCNRateActive	PRMDEF_MAKEB(15,ALMbase+53, 0,1) /*  rate alarm active */
+#define	SCNLoActive	PRMDEF_MAKEB(15,ALMbase+53, 1,1) /*  low alarm active */
+#define	SCNHiActive	PRMDEF_MAKEB(15,ALMbase+53, 2,1) /*  high alarm active */
+#define	SCNLoLoActive	PRMDEF_MAKEB(15,ALMbase+53, 3,1) /*  low low alarm active */
+#define	SCNHiHiActive	PRMDEF_MAKEB(15,ALMbase+53, 4,1) /*  high high alarm active */
+#define	SCNXtLoActive	PRMDEF_MAKEB(15,ALMbase+53, 5,1) /*  transmitter low alarm active */
+#define	SCNXtHiActive	PRMDEF_MAKEB(15,ALMbase+53, 6,1) /*  transmitter high alarm active */
+#define	SCNRsLoActive	PRMDEF_MAKEB(15,ALMbase+53, 7,1) /*  unreasonable low alarm active */
+#define	SCNRsHiActive	PRMDEF_MAKEB(15,ALMbase+53, 8,1) /*  unreasonable high alarm active */
+#define	SCNalmMsgIdx	PRMDEF_MAKEB(15,ALMbase+54,0,16) /*  alarm message number */
+
+/*     These are status equivalents of analog alarm definitions. */
+#define	SCNState0OnDelay	PRMDEF_MAKEB(15,ALMbase+32,0,14) /*  state 0 on delay */
+#define	SCNState1OnDelay	PRMDEF_MAKEB(15,ALMbase+33,0,14) /*  state 1 on delay */
+#define	SCNState2OnDelay	PRMDEF_MAKEB(15,ALMbase+34,0,14) /*  state 2 on delay */
+#define	SCNState3OnDelay	PRMDEF_MAKEB(15,ALMbase+35,0,14) /*  state 3 on delay */
+#define	SCNState4OnDelay	PRMDEF_MAKEB(15,ALMbase+36,0,14) /*  state 4 on delay */
+#define	SCNState5OnDelay	PRMDEF_MAKEB(15,ALMbase+37,0,14) /*  state 5 on delay */
+#define	SCNState6OnDelay	PRMDEF_MAKEB(15,ALMbase+38,0,14) /*  state 6 on delay */
+#define	SCNState7OnDelay	PRMDEF_MAKEB(15,ALMbase+39,0,14) /*  state 7 on delay */
+#define	SCNState0OffDelay	PRMDEF_MAKEB(15,ALMbase+40,0,14) /*  state 0 off delay */
+#define	SCNState1OffDelay	PRMDEF_MAKEB(15,ALMbase+41,0,14) /*  state 1 off delay */
+#define	SCNState2OffDelay	PRMDEF_MAKEB(15,ALMbase+42,0,14) /*  state 2 off delay */
+#define	SCNState3OffDelay	PRMDEF_MAKEB(15,ALMbase+43,0,14) /*  state 3 off delay */
+#define	SCNState4OffDelay	PRMDEF_MAKEB(15,ALMbase+44,0,14) /*  state 4 off delay */
+#define	SCNState5OffDelay	PRMDEF_MAKEB(15,ALMbase+45,0,14) /*  state 5 off delay */
+#define	SCNState6OffDelay	PRMDEF_MAKEB(15,ALMbase+46,0,14) /*  state 6 off delay */
+#define	SCNState7OffDelay	PRMDEF_MAKEB(15,ALMbase+47,0,14) /*  state 7 off delay */
+#define	SCNinState0OnDelay	PRMDEF_MAKEB(15,ALMbase+32,15,1) /*  in state 0 on delay */
+#define	SCNinState1OnDelay	PRMDEF_MAKEB(15,ALMbase+33,15,1) /*  in state 1 on delay */
+#define	SCNinState2OnDelay	PRMDEF_MAKEB(15,ALMbase+34,15,1) /*  in state 2 on delay */
+#define	SCNinState3OnDelay	PRMDEF_MAKEB(15,ALMbase+35,15,1) /*  in state 3 on delay */
+#define	SCNinState4OnDelay	PRMDEF_MAKEB(15,ALMbase+36,15,1) /*  in state 4 on delay */
+#define	SCNinState5OnDelay	PRMDEF_MAKEB(15,ALMbase+37,15,1) /*  in state 5 on delay */
+#define	SCNinState6OnDelay	PRMDEF_MAKEB(15,ALMbase+38,15,1) /*  in state 6 on delay */
+#define	SCNinState7OnDelay	PRMDEF_MAKEB(15,ALMbase+39,15,1) /*  in state 7 on delay */
+#define	SCNinState0OffDelay	PRMDEF_MAKEB(15,ALMbase+40,15,1) /*  in state 0 off delay */
+#define	SCNinState1OffDelay	PRMDEF_MAKEB(15,ALMbase+41,15,1) /*  in state 1 off delay */
+#define	SCNinState2OffDelay	PRMDEF_MAKEB(15,ALMbase+42,15,1) /*  in state 2 off delay */
+#define	SCNinState3OffDelay	PRMDEF_MAKEB(15,ALMbase+43,15,1) /*  in state 3 off delay */
+#define	SCNinState4OffDelay	PRMDEF_MAKEB(15,ALMbase+44,15,1) /*  in state 4 off delay */
+#define	SCNinState5OffDelay	PRMDEF_MAKEB(15,ALMbase+45,15,1) /*  in state 5 off delay */
+#define	SCNinState6OffDelay	PRMDEF_MAKEB(15,ALMbase+46,15,1) /*  in state 6 off delay */
+#define	SCNinState7OffDelay	PRMDEF_MAKEB(15,ALMbase+47,15,1) /*  in state 7 off delay */
+#define	SCNState0Priority	PRMDEF_MAKEB(15,ALMbase+48, 0,4) /*  state 0 alarm priority */
+#define	SCNState1Priority	PRMDEF_MAKEB(15,ALMbase+48, 4,4) /*  state 1 alarm priority */
+#define	SCNState2Priority	PRMDEF_MAKEB(15,ALMbase+48, 8,4) /*  state 2 alarm priority */
+#define	SCNState3Priority	PRMDEF_MAKEB(15,ALMbase+48,12,4) /*  state 3 alarm priority */
+#define	SCNState4Priority	PRMDEF_MAKEB(15,ALMbase+49, 0,4) /*  state 4 alarm priority */
+#define	SCNState5Priority	PRMDEF_MAKEB(15,ALMbase+49, 4,4) /*  state 5 alarm priority */
+#define	SCNState6Priority	PRMDEF_MAKEB(15,ALMbase+49, 8,4) /*  state 6 alarm priority */
+#define	SCNState7Priority	PRMDEF_MAKEB(15,ALMbase+49,12,4) /*  state 7 alarm priority */
+#define	SCNState0SubPriority	PRMDEF_MAKEB(15,ALMbase+50, 0,4) /*  state 0 alarm sub priority */
+#define	SCNState1SubPriority	PRMDEF_MAKEB(15,ALMbase+50, 4,4) /*  state 1 alarm sub priority */
+#define	SCNState2SubPriority	PRMDEF_MAKEB(15,ALMbase+50, 8,4) /*  state 2 alarm sub priority */
+#define	SCNState3SubPriority	PRMDEF_MAKEB(15,ALMbase+50,12,4) /*  state 3 alarm sub priority */
+#define	SCNState4SubPriority	PRMDEF_MAKEB(15,ALMbase+51, 0,4) /*  state 4 alarm sub priority */
+#define	SCNState5SubPriority	PRMDEF_MAKEB(15,ALMbase+51, 4,4) /*  state 5 alarm sub priority */
+#define	SCNState6SubPriority	PRMDEF_MAKEB(15,ALMbase+51, 8,4) /*  state 6 alarm sub priority */
+#define	SCNState7SubPriority	PRMDEF_MAKEB(15,ALMbase+51,12,4) /*  state 7 alarm sub priority */
+#define	SCNState0AlmEnabled	PRMDEF_MAKEB(15,ALMbase+52, 0,1) /*  state 0 alarm enabled */
+#define	SCNState1AlmEnabled	PRMDEF_MAKEB(15,ALMbase+52, 1,1) /*  state 1 alarm enabled */
+#define	SCNState2AlmEnabled	PRMDEF_MAKEB(15,ALMbase+52, 2,1) /*  state 2 alarm enabled */
+#define	SCNState3AlmEnabled	PRMDEF_MAKEB(15,ALMbase+52, 3,1) /*  state 3 alarm enabled */
+#define	SCNState4AlmEnabled	PRMDEF_MAKEB(15,ALMbase+52, 4,1) /*  state 4 alarm enabled */
+#define	SCNState5AlmEnabled	PRMDEF_MAKEB(15,ALMbase+52, 5,1) /*  state 5 alarm enabled */
+#define	SCNState6AlmEnabled	PRMDEF_MAKEB(15,ALMbase+52, 6,1) /*  state 6 alarm enabled */
+#define	SCNState7AlmEnabled	PRMDEF_MAKEB(15,ALMbase+52, 7,1) /*  state 7 alarm enabled */
+#define	SCNState0AlmActive	PRMDEF_MAKEB(15,ALMbase+53, 0,1) /*  state 0 alarm active */
+#define	SCNState1AlmActive	PRMDEF_MAKEB(15,ALMbase+53, 1,1) /*  state 1 alarm active */
+#define	SCNState2AlmActive	PRMDEF_MAKEB(15,ALMbase+53, 2,1) /*  state 2 alarm active */
+#define	SCNState3AlmActive	PRMDEF_MAKEB(15,ALMbase+53, 3,1) /*  state 3 alarm active */
+#define	SCNState4AlmActive	PRMDEF_MAKEB(15,ALMbase+53, 4,1) /*  state 4 alarm active */
+#define	SCNState5AlmActive	PRMDEF_MAKEB(15,ALMbase+53, 5,1) /*  state 5 alarm active */
+#define	SCNState6AlmActive	PRMDEF_MAKEB(15,ALMbase+53, 6,1) /*  state 6 alarm active */
+#define	SCNState7AlmActive	PRMDEF_MAKEB(15,ALMbase+53, 7,1) /*  state 7 alarm active */
+
+#endif	

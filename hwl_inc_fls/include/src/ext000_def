@@ -1,0 +1,567 @@
+#if	!defined(EXTSZ)
+
+/*                             EXT000 - point EXTENSION file */
+/*                             ----------------------------- */
+
+/*     REVISION: */
+/*         @(#)ext000_def	main.SVR_MASTERPROJ_Integration.R0930_Int.1 */
+
+/*     PRMDEF: */
+/*         PRMDEF are used to describe all the fields in a point record. */
+/*         PRMDEF are used by the dictionary and by code. */
+/*         points_def (via points.h) contains macros to be used by C programs. */
+/*         SEP converter handles Fortran macros $word, $bit, etc. */
+/*         points_def also contains functions for use by Fortran to operate on PRMDEF. */
+/*     SEE: points_def for description of PRMDEF and $predefa() and $prmdefb() */
+
+/*     NOTES: */
+/*	1) Reals and integer*4s must start on words 1,3,5 etc. */
+/*	2) Doubles must start on 1,5,9 etc. */
+/*	3) Sizes must be multiple of 4 to maintain 64 bit alignment. */
+
+
+#define	EXTSZ	64 /*  biggest of the folowing sizes */
+#define	EXTSZ_STA	4
+#define	EXTSZ_ANA	52
+#define	EXTSZ_ACC	36
+#define	EXTSZ_ACS	64
+#define	EXTSZ_CDA	4
+#define	EXTSZ_ASH	4
+
+#if	!defined(USE_DERIVED_TYPE)
+/*       integer(2) EXTBUF(EXTSZ) */
+#endif	
+
+
+/*         STATUS points */
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                          1 ! action algo # !   pv algo #   ! */
+/*                            --------------------------------- */
+/*                          2 !      pv algo block number     ! */
+/*                            --------------------------------- */
+/*                          3 !  action algo block number     ! */
+/*                            --------------------------------- */
+/*                          4 !   STAVALi     ! field quality ! */
+/*                            --------------------------------- */
+
+
+typedef struct
+    {
+    uint2 algos;		/* algo numbers			*/
+    uint2 pvalgblk;		/*   PV   algo block number	*/
+    uint2 actalgblk;		/* action algo block number	*/
+    uint2 fieldquality;	/* field value quality 		*/
+    } STA_EXT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(STA_EXT) <= (EXTSZ * sizeof(int2)), "STA_EXT struct is too large for EXTSZ");
+	static_assert(sizeof(STA_EXT) == (EXTSZ_STA * sizeof(int2)), "STA_EXT struct is different size to EXTSZ_STA");
+#endif
+
+
+
+#define	PVALGN	PRMDEF_MAKEB(1,1, 0,8) /*  PV algo number */
+#define	PVALGB	PRMDEF_MAKEB(1,2,0,16) /*  PV algo block number (uint2, use geti4()) */
+#define	ACALGN	PRMDEF_MAKEB(1,1, 8,8) /*  action algo number */
+#define	ACALGB	PRMDEF_MAKEB(1,3,0,16) /*  action algo block number (uint2, use geti4()) */
+#define	STAFPVQP	PRMDEF_MAKEB(1,4, 0,8) /*  status field PV quality */
+#define	STAFPVP	PRMDEF_MAKEB(1,4, 8,3) /*  status field PV value */
+#define	STASPP	PRMDEF_MAKEB(1,4,11,1) /*  status SP value */
+#define	STAA1P	PRMDEF_MAKEB(1,4,12,1) /*  status A1 value */
+#define	STAA2P	PRMDEF_MAKEB(1,4,13,1) /*  status A2 value */
+#define	STAA3P	PRMDEF_MAKEB(1,4,14,1) /*  status A3 value */
+#define	STAA4P	PRMDEF_MAKEB(1,4,15,1) /*  status A4 value */
+
+
+/*         CDA point (and other GDA type points) */
+
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                          1 ! action algo # !   pv algo #   ! */
+/*                            --------------------------------- */
+/*                          2 !      pv algo block number     ! */
+/*                            --------------------------------- */
+/*                          3 !  action algo block number     ! */
+/*                            --------------------------------- */
+/*                          4 !           EE code             ! */
+/*                            --------------------------------- */
+
+
+typedef struct
+    {
+    uint2 algos;		/* algo numbers			*/
+    uint2 pvalgblk;		/*   PV   algo block number	*/
+    uint2 actalgblk;		/* action algo block number	*/
+    uint2 eecode;		/*  EE code populated by alarms */
+    } CDA_EXT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(CDA_EXT) <= (EXTSZ * sizeof(int2)), "CDA_EXT struct is too large for EXTSZ");
+	static_assert(sizeof(CDA_EXT) == (EXTSZ_CDA * sizeof(int2)), "CDA_EXT struct is different size to EXTSZ_CDA");
+#endif
+
+
+
+
+/*         ASH point (and other hierarchy points) */
+
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                          1 ! action algo # !   pv algo #   ! */
+/*                            --------------------------------- */
+/*                          2 !      pv algo block number     ! */
+/*                            --------------------------------- */
+/*                          3 !  action algo block number     ! */
+/*                            --------------------------------- */
+/*                          4 !           EE code             ! */
+/*                            --------------------------------- */
+
+
+typedef struct
+    {
+    uint2 algos;		/* algo numbers			*/
+    uint2 pvalgblk;		/*   PV   algo block number	*/
+    uint2 actalgblk;		/* action algo block number	*/
+    uint2 eecode;		/*  EE code populated by alarms */
+    } ASH_EXT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(ASH_EXT) <= (EXTSZ * sizeof(int2)), "ASH_EXT struct is too large for EXTSZ");
+	static_assert(sizeof(ASH_EXT) == (EXTSZ_ASH * sizeof(int2)), "ASH_EXT struct is different size to EXTSZ_ASH");
+#endif
+
+
+
+#define	EECODE	PRMDEF_MAKEB(1, 4,0,16) /*  EE code number */
+#define	AXTALG_LEN	3  /*  length of algo section */
+#define	AXTNODEL_OFF	4  /*  Position from which not to delete */
+/*                                                 when an access point is deleted. */
+
+
+
+/*         ANALOG point */
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                          1 ! action algo # !   pv algo #   ! */
+/*                            --------------------------------- */
+/*                          2 !      pv algo block number     ! */
+/*                            --------------------------------- */
+/*                          3 !  action algo block number     ! */
+/*                            --------------------------------- */
+/*                          4 !       -       ! field quality ! */
+/*                            --------------------------------- */
+/*                        5,8 !        field pv (eu)          ! */
+/*                            --------------------------------- */
+/*                       9,12 !              op (%)           ! */
+/*                            --------------------------------- */
+/*                      13,16 !              sp (eu)          ! */
+/*                            --------------------------------- */
+/*                         17 !  AT4  !  AT3  !  AT2  !  AT1  ! */
+/*                            --------------------------------- */
+/*                         18 !  AT8  !  AT7  !  AT6  !  AT5  ! */
+/*                            --------------------------------- */
+/*                      19,20 !         alarm limit 1 (eu)    ! */
+/*                            --------------------------------- */
+/*                      21,22 !         alarm limit 2 (eu)    ! */
+/*                            --------------------------------- */
+/*                      23,24 !         alarm limit 3 (eu)    ! */
+/*                            --------------------------------- */
+/*                      25,26 !         alarm limit 4 (eu)    ! */
+/*                            --------------------------------- */
+/*                      27,28 !         alarm limit 5 (eu)    ! */
+/*                            --------------------------------- */
+/*                      29,30 !         alarm limit 6 (eu)    ! */
+/*                            --------------------------------- */
+/*                      31,32 !         alarm limit 7 (eu)    ! */
+/*                            --------------------------------- */
+/*                      33,34 !         alarm limit 8 (eu)    ! */
+/*                            --------------------------------- */
+/*                         34 ! UA2p  ! UA2s  ! UA1p  ! UA1s  ! */
+/*                            --------------------------------- */
+/*                         36 ! UA4p  ! UA4s  ! UA3p  ! UA3s  ! */
+/*                            --------------------------------- */
+/*                      37,40 !  auxilary 1 value             ! */
+/*                            --------------------------------- */
+/*                      41,44 !  auxilary 2 value             ! */
+/*                            --------------------------------- */
+/*                      45,48 !  auxilary 3 value             ! */
+/*                            --------------------------------- */
+/*                      49,52 !  auxilary 4 value             ! */
+/*                             --------------------------------- */
+
+
+typedef struct
+    {
+    uint2 algos;		/* algo numbers			*/
+    uint2 pvalgblk;		/*   PV   algo block number	*/
+    uint2 actalgblk;		/* action algo block number	*/
+    uint2 fieldquality;	/* field value quality 		*/
+    double fieldpv;		/* field value			*/
+    double op;		/* op (%)			*/
+    double sp;		/* sp (eu)			*/
+    uint2 alarmtypes[2];	/* alarm types			*/
+    float limits[8];		/* alarm limits			*/
+    uint2 usralmpri[2];	/* USER alarm priority   	*/
+    double a1;		/* A1 value			*/
+    double a2;		/* A2 value			*/
+    double a3;		/* A3 value			*/
+    double a4;		/* A4 value			*/
+    } ANA_EXT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(ANA_EXT) <= (EXTSZ * sizeof(int2)), "ANA_EXT struct is too large for EXTSZ");
+	static_assert(sizeof(ANA_EXT) == (EXTSZ_ANA * sizeof(int2)), "ANA_EXT struct is different size to EXTSZ_ANA");
+#endif
+
+
+
+#define	ANAFPVQP	PRMDEF_MAKEB(1, 4, 0,8) /*  analog field PV quality */
+#define	ANAFPVP	PRMDEF_MAKEB(1, 5, 0,0) /*  analog field PV value */
+#define	OPP	PRMDEF_MAKEB(1, 9, 0,0) /*  output */
+#define	SPP	PRMDEF_MAKEB(1,13, 0,0) /*  setpoint */
+/*                                            ;* see alarm state in DAT000 */
+#define	AT1P	PRMDEF_MAKEB(1,17, 0,4) /*  alarm type 1 */
+#define	AT2P	PRMDEF_MAKEB(1,17, 4,4) /*  alarm type 2 */
+#define	AT3P	PRMDEF_MAKEB(1,17, 8,4) /*  alarm type 3 */
+#define	AT4P	PRMDEF_MAKEB(1,17,12,4) /*  alarm type 4 */
+#define	AT5P	PRMDEF_MAKEB(1,18, 0,4) /*  alarm type 5 */
+#define	AT6P	PRMDEF_MAKEB(1,18, 4,4) /*  alarm type 6 */
+#define	AT7P	PRMDEF_MAKEB(1,18, 8,4) /*  alarm type 7 */
+#define	AT8P	PRMDEF_MAKEB(1,18,12,4) /*  alarm type 8 */
+#define	AL1P	PRMDEF_MAKEB(1,19, 0,0) /*  alarm limit 1 */
+#define	AL2P	PRMDEF_MAKEB(1,21, 0,0) /*  alarm limit 2 */
+#define	AL3P	PRMDEF_MAKEB(1,23, 0,0) /*  alarm limit 3 */
+#define	AL4P	PRMDEF_MAKEB(1,25, 0,0) /*  alarm limit 4 */
+#define	AL5P	PRMDEF_MAKEB(1,27, 0,0) /*  alarm limit 5 */
+#define	AL6P	PRMDEF_MAKEB(1,29, 0,0) /*  alarm limit 6 */
+#define	AL7P	PRMDEF_MAKEB(1,31, 0,0) /*  alarm limit 7 */
+#define	AL8P	PRMDEF_MAKEB(1,33, 0,0) /*  alarm limit 8 */
+#define	UA1SB	PRMDEF_MAKEB(1,35, 0,4) /*  UA1s - USER alarm1 subpriority (0-15) */
+#define	UA1PR	PRMDEF_MAKEB(1,35, 4,4) /*  UA1p - USER alarm1 priority    (0- 3) */
+#define	UA2SB	PRMDEF_MAKEB(1,35, 8,4) /*  UA2s - USER alarm2 subpriority (0-15) */
+#define	UA2PR	PRMDEF_MAKEB(1,35,12,4) /*  UA2p - USER alarm2 priority    (0- 3) */
+#define	UA3SB	PRMDEF_MAKEB(1,36, 0,4) /*  UA3s - USER alarm3 subpriority (0-15) */
+#define	UA3PR	PRMDEF_MAKEB(1,36, 4,4) /*  UA3p - USER alarm3 priority    (0- 3) */
+#define	UA4SB	PRMDEF_MAKEB(1,36, 8,4) /*  UA4s - USER alarm4 subpriority (0-15) */
+#define	UA4PR	PRMDEF_MAKEB(1,36,12,4) /*  UA4p - USER alarm4 priority    (0- 3) */
+#define	A1P	PRMDEF_MAKEB(1,37, 0,0) /*  auxilary value 1 */
+#define	A2P	PRMDEF_MAKEB(1,41, 0,0) /*  auxilary value 2 */
+#define	A3P	PRMDEF_MAKEB(1,45, 0,0) /*  auxilary value 3 */
+#define	A4P	PRMDEF_MAKEB(1,49, 0,0) /*  auxilary value 4 */
+
+#if	!defined(USE_DERIVED_TYPE)
+/*       double precision FPVV, OPV, SPV, AXV(4) */
+/*       real          ALV(8) */
+/*       equivalence ( FPVV , $buf(ANAFPVP) ) */
+/*       equivalence ( OPV  , $buf(OPP) ) */
+/*       equivalence ( SPV  , $buf(SPP) ) */
+/*       equivalence ( ALV  , $buf(AL1P) ) */
+/*       equivalence ( AXV  , $buf(A1P) ) */
+#endif	
+
+
+
+/*         ACCUML point */
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                          1 ! action algo # !   pv algo #   ! */
+/*                            --------------------------------- */
+/*                          2 !      pv algo block number     ! */
+/*                            --------------------------------- */
+/*                          3 !  action algo block number     ! */
+/*                            --------------------------------- */
+/*                          4 !       -       ! field quality ! */
+/*                            --------------------------------- */
+/*                        5,8 !         field pv (not used)   ! */
+/*                            --------------------------------- */
+/*                       9,12 !         meter factor          ! */
+/*                            --------------------------------- */
+/*                      13,16 !         scale factor          ! */
+/*                            --------------------------------- */
+/*                         17 !  AT4  !  AT3  !  AT2  !  AT1  ! */
+/*                            --------------------------------- */
+/*                         18 !  AT8  !  AT7  !  AT6  !  AT5  ! */
+/*                            --------------------------------- */
+/*                      19,20 !         alarm limit 1 (eu)    ! */
+/*                            --------------------------------- */
+/*                      21,22 !         alarm limit 2 (eu)    ! */
+/*                            --------------------------------- */
+/*                      23,24 !         alarm limit 3 (eu)    ! */
+/*                            --------------------------------- */
+/*                      25,26 !         alarm limit 4 (eu)    ! */
+/*                            --------------------------------- */
+/*                      27,28 !         alarm limit 5 (eu)    ! */
+/*                            --------------------------------- */
+/*                      29,30 !         alarm limit 6 (eu)    ! */
+/*                            --------------------------------- */
+/*                      31,32 !         alarm limit 7 (eu)    ! */
+/*                            --------------------------------- */
+/*                      33,34 !         alarm limit 8 (eu)    ! */
+/*                            --------------------------------- */
+/*                         35 ! UA2p  ! UA2s  ! UA1p  ! UA1s  ! */
+/*                            --------------------------------- */
+/*                         36 ! UA4p  ! UA4s  ! UA3p  ! UA3s  ! */
+/*                            --------------------------------- */
+
+
+typedef struct
+    {
+    uint2 algos;		/* algo numbers			*/
+    uint2 pvalgblk;		/*   PV   algo block number	*/
+    uint2 actalgblk;		/* action algo block number	*/
+    uint2 fieldquality;	/* field value quality 		*/
+    double fieldpv;		/* field value			*/
+    double mf;		/* meter factor			*/
+    double sf;		/* scal factor			*/
+    uint2 alarmtypes[2];	/* alarm types			*/
+    float limits[8];		/* alarm limits			*/
+    uint2 usralmpri[2];	/* USER alarm priority   	*/
+    } ACC_EXT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(ACC_EXT) <= (EXTSZ * sizeof(int2)), "ACC_EXT struct is too large for EXTSZ");
+	static_assert(sizeof(ACC_EXT) == (EXTSZ_ACC * sizeof(int2)), "ACC_EXT struct is different size to EXTSZ_ACC");
+#endif
+
+
+
+#define	MFP	PRMDEF_MAKEB(1, 9,0,0) /*  meter factor */
+#define	SFP	PRMDEF_MAKEB(1,13,0,0) /*  scale factor */
+
+#if	!defined(USE_DERIVED_TYPE)
+/*       double precision MFV ,SFV */
+/*       equivalence ( MFV ,$buf(MFP) ) */
+/*       equivalence ( SFV ,$buf(SFP) ) */
+#endif	
+
+
+
+/*         ACCESS point */
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                          1 ! action algo # !   pv algo #   ! */
+/*                            --------------------------------- */
+/*                          2 !      pv algo block number     ! */
+/*                            --------------------------------- */
+/*                          3 !  action algo block number     ! */
+/*                            --------------------------------- */
+/*                          4 ! Card ID field A start position! */
+/*                            --------------------------------- */
+/*                          5 ! Card ID field A length        ! */
+/*                            --------------------------------- */
+/*                          6 ! Card ID field B start position! */
+/*                            --------------------------------- */
+/*                          7 ! Card ID field B length        ! */
+/*                            -------------------------------- */
+/*                          8 ! Card ID field C start position! */
+/*                            --------------------------------- */
+/*                          9 ! Card ID field C length        ! */
+/*                            --------------------------------- */
+/*                         10 ! Site Code start position      ! */
+/*                            --------------------------------- */
+/*                         11 ! Expiration date start pos'n   ! */
+/*                            --------------------------------- */
+/*                         12 ! ABA card data action number   ! */
+/*                            --------------------------------- */
+/*                         13 !               !H!G!F!E!D!C!B!A! */
+/*                            --------------------------------- */
+/*                            ! A  Failsoft: site code as key ! */
+/*                            ! B  Failsoft: deny on exp date ! */
+/*                            ! C  Failsoft: deny on site code! */
+/*                            ! D  Failsoft: deny on card ID  ! */
+/*                            ! E  Site code as key           ! */
+/*                            ! F  Deny on exp date           ! */
+/*                            ! G  Deny on site code          ! */
+/*                            ! H  Deny on card ID            ! */
+/*                            --------------------------------- */
+/*                         14 !               !S!             ! */
+/*                            --------------------------------- */
+/*                            ! S  Send card access once/read ! */
+/*                            --------------------------------- */
+/*                         15 ! Read range                    ! */
+/*                            --------------------------------- */
+/*                         16 ! # verification key reads      ! */
+/*                            --------------------------------- */
+/*                      17-18 ! Verification time window      ! */
+/*                            --------------------------------- */
+/*                      19-20 ! Beeper: on duration           ! */
+/*                            --------------------------------- */
+/*                      21-22 ! Beeper: off duration          ! */
+/*                            --------------------------------- */
+/*                      23-24 ! Beeper: on/off duration       ! */
+/*                            --------------------------------- */
+/*                      25-26 ! Red LED: on duration          ! */
+/*                            --------------------------------- */
+/*                      27-28 ! Red LED: off duration         ! */
+/*                            --------------------------------- */
+/*                      29-30 ! Red LED: on/off duration      ! */
+/*                            --------------------------------- */
+/*                      31-32 ! Green LED: on duration        ! */
+/*                            --------------------------------- */
+/*                      33-34 ! Green LED: off duration       ! */
+/*                            --------------------------------- */
+/*                      35-36 ! Green LED: on/off duration    ! */
+/*                            --------------------------------- */
+/*                         37 ! Reserved                      ! */
+/*                            --------------------------------- */
+/*                         38 !       ENTERZON rec number     ! */
+/*                            --------------------------------- */
+/*                         39 !        EXITZON rec number     ! */
+/*                            --------------------------------- */
+
+#define	EZONE_ACS	PRMDEF_MAKEB(1,38,0,16) /*  Zone Enforcement entry zone */
+#define	XZONE_ACS	PRMDEF_MAKEB(1,39,0,16) /*  Zone Enforcement exit zone */
+
+/* ABA Reader Configuration */
+
+#define	AXTSPA	PRMDEF_MAKEB(1, 4,0,16) /*  Start position A */
+#define	AXTLNA	PRMDEF_MAKEB(1, 5,0,16) /*  Length A */
+#define	AXTSPB	PRMDEF_MAKEB(1, 6,0,16) /*  Start position B */
+#define	AXTLNB	PRMDEF_MAKEB(1, 7,0,16) /*  Length B */
+#define	AXTSPC	PRMDEF_MAKEB(1, 8,0,16) /*  Start position C */
+#define	AXTLNC	PRMDEF_MAKEB(1, 9,0,16) /*  Length C */
+#define	AXTSCSP	PRMDEF_MAKEB(1,10,0,16) /*  Site code start position */
+#define	AXTEDSP	PRMDEF_MAKEB(1,11,0,16) /*  expiry date start position */
+#define	AXTCDAN	PRMDEF_MAKEB(1,12,0,16) /*  ABA card data action number */
+#define	AXTFLG	PRMDEF_MAKEB(1,13,0, 8) /*  ABA reader flags */
+#define	AXTFLG_FSCK	0  /*  ABA reader flag: Failsoft: site code as key */
+#define	AXTFLG_FDEX	1  /*  ABA reader flag: Failsoft: deny on exp date */
+#define	AXTFLG_FDSC	2  /*  ABA reader flag: Failsoft: deny on site code */
+#define	AXTFLG_FDCRD	3  /*  ABA reader flag: Failsoft: deny on card ID */
+#define	AXTFLG_SCK	4  /*  ABA reader flag: Site code as key */
+#define	AXTFLG_DEX	5  /*  ABA reader flag: Deny on exp date */
+#define	AXTFLG_DSC	6  /*  ABA reader flag: Deny on site code */
+#define	AXTFLG_DCRD	7  /*  ABA reader flag: Deny on card ID */
+
+#define	AXTSP_MAX	40  /*  Start position maximum */
+#define	AXTLN_MAX	8  /*  Length maximum */
+#define	AXTCDAN_MAX	32  /*  Card data action number maximum */
+
+
+/* Digikey Reader Data */
+
+#define	AXTFDC	PRMDEF_MAKEB(1,14, 7,1) /*  Forward digikey code */
+#define	AXTRDR	PRMDEF_MAKEB(1,15,0,16) /*  Read range */
+#define	AXTNVKR	PRMDEF_MAKEB(1,16,0,16) /*  Number of verification key reads */
+#define	AXTVTW	PRMDEF_MAKEB(1,17,0,16) /*  Verification time window */
+#define	AXTBPON	PRMDEF_MAKEB(1,19,0,16) /*  Beeper on duration */
+#define	AXTBPOF	PRMDEF_MAKEB(1,21,0,16) /*  Beeper off duration */
+#define	AXTBPONF	PRMDEF_MAKEB(1,23,0,16) /*  Beeper on/off duration */
+#define	AXTRLON	PRMDEF_MAKEB(1,25,0,16) /*  Red LED on duration */
+#define	AXTRLOF	PRMDEF_MAKEB(1,27,0,16) /*  Red LED off duration */
+#define	AXTRLONF	PRMDEF_MAKEB(1,29,0,16) /*  Red LED on/off duration */
+#define	AXTGLON	PRMDEF_MAKEB(1,31,0,16) /*  Green LED on duration */
+#define	AXTGLOF	PRMDEF_MAKEB(1,33,0,16) /*  Green LED off duration */
+#define	AXTGLONF	PRMDEF_MAKEB(1,35,0,16) /*  Green LED on/off duration */
+
+#define	AXTRDR_MAX	255   /*  Read range maximum */
+#define	AXTNVKR_MAX	255   /*  Number of verification key reads maximum */
+#define	AXTBEEP_MAX	65535 /*  Beeper maximum */
+
+
+/******* FS90 AMC Section ************* */
+
+/*                            --------------------------------- */
+/*                         40 ! global time period            ! */
+/*                            --------------------------------- */
+/*                         41 ! PIN pad ignore time period    ! */
+/*                            --------------------------------- */
+/*                         42 ! from area (0-255)             ! */
+/*                            --------------------------------- */
+/*                         43 ! to area (0-255)               ! */
+/*                            --------------------------------- */
+/*                         44 ! from level (0-6)	             ! */
+/*                            --------------------------------- */
+/*                         45 ! to level (0-6)                ! */
+/*                            --------------------------------- */
+/*                         46 ! shunt time (0-255)            ! */
+/*                            --------------------------------- */
+/*                         47 ! strike time (0-255)           ! */
+/*                            --------------------------------- */
+/*                         48 ! RTX sensor shunt time (0-255) ! */
+/*                            --------------------------------- */
+/*                         49 ! forgive shunt time (0-255)    ! */
+/*                            --------------------------------- */
+/*                         50 ! forgive shunt time period     ! */
+/*                            --------------------------------- */
+/*                         51 !             !H!G!F!E!D!C!B! A ! */
+/*                            --------------------------------- */
+/*                            !  A = controlled area type     ! */
+/*                            !      0 = normal               ! */
+/*                            !      1 = two man rule         ! */
+/*                            !      2 = supervisor required  ! */
+/*                            !  B = door passback reset      ! */
+/*                            !  C = reader lockout           ! */
+/*                            !  D = long access enable       ! */
+/*                            !  E = GC event initiator       ! */
+/*                            !  F = tracked reader           ! */
+/*                            !  G = reader not programmed    ! */
+/*                            !  H = in (0) / out (1) reader  ! */
+/*                            --------------------------------- */
+/*                         52 ! single door anti-passback time! */
+/*                            --------------------------------- */
+/*                      53-64 ! spare                         ! */
+/*                            --------------------------------- */
+
+#define	AXTGTP	PRMDEF_MAKEB(1,40,0,16) /*  global time period */
+#define	AXTPPITP	PRMDEF_MAKEB(1,41,0,16) /*  PIN pad ignore time period */
+#define	AXTFRA	PRMDEF_MAKEB(1,42,0,16) /*  from area (0-255) */
+#define	AXTTOA	PRMDEF_MAKEB(1,43,0,16) /*  to area (0-255) */
+#define	AXTFRL	PRMDEF_MAKEB(1,44,0,16) /*  from level (0-6) */
+#define	AXTTOL	PRMDEF_MAKEB(1,45,0,16) /*  to level (0-6) */
+#define	AXTSHT	PRMDEF_MAKEB(1,46,0,16) /*  shunt time (0-255) */
+#define	AXTSTT	PRMDEF_MAKEB(1,47,0,16) /*  strike time (0-255) */
+#define	AXTRSST	PRMDEF_MAKEB(1,48,0,16) /*  RTX sensor shunt time (0-255) */
+#define	AXTFST	PRMDEF_MAKEB(1,49,0,16) /*  forgive shunt time (0-255) */
+#define	AXTFSTP	PRMDEF_MAKEB(1,50,0,16) /*  forgive shunt time period */
+#define	AXTFSFLG	PRMDEF_MAKEB(1,51,0, 9) /*  FS90 AMC reader flags */
+#define	AXTSDPT	PRMDEF_MAKEB(1,52,0,16) /*  single door anti-pback time (0-1440) */
+
+#define	AXTLVL_MAX	6   /*  Max passback level */
+#define	AXTTIM_MAX	255 /*  Max time value */
+
+
+typedef struct
+    {
+    uint2 algos;		/* algo numbers			*/
+    uint2 pvalgblk;		/*   PV   algo block number	*/
+    uint2 actalgblk;		/* action algo block number	*/
+    uint2 axtspa;		/* Card ID start position A	*/
+    uint2 axtlna;		/* Card ID length A		*/
+    uint2 axtspb;		/* Card ID start position B	*/
+    uint2 axtlnb;		/* Card ID length B		*/
+    uint2 axtspc;		/* Card ID start position C	*/
+    uint2 axtlnc;		/* Card ID length C		*/
+    uint2 axtscsp;		/* Site code start position	*/
+    uint2 axtedsp;		/* Expiration date start position */
+    uint2 axtcdan;		/* ABA card data action number	*/
+    uint2 axtflg;		/* ABA reader flags		*/
+    uint2 axtfdc;		/* Forward digikey code		*/
+    uint2 axtrdr;		/* Read range			*/
+    uint2 axtnvkr;		/* Number of verification key reads */
+    long axtvtw;		/* Verification time window	*/
+    long axtbpon;		/* Beeper on duration		*/
+    long axtbpof;		/* Beeper off duration		*/
+    long axtbponf;		/* Beeper on/off duration	*/
+    long axtrlon;		/* Red LED on duration		*/
+    long axtrlof;		/* Red LED off duration		*/
+    long axtrlonf;		/* Red LED on/off duration	*/
+    long axtglon;		/* Green LED on duration	*/
+    long axtglof;		/* Green LED off duration	*/
+    long axtglonf;		/* Green LED on/off duration	*/
+    uint2 reserved;		/* reserved			*/
+    uint2 enterzone;		/* Zone enforcement enterzone	*/
+    uint2 exitzone;		/* Zone enforcement exitzone	*/
+    uint2 spare3[24];		/* spare space			*/
+    } ACS_EXT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(ACS_EXT) <= (EXTSZ * sizeof(int2)), "ACS_EXT struct is too large for EXTSZ");
+	static_assert(sizeof(ACS_EXT) == (EXTSZ_ACS * sizeof(int2)), "ACS_EXT struct is different size to EXTSZ_ACS");
+#endif
+
+
+
+
+#endif	

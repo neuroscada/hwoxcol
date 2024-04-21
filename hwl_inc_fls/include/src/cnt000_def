@@ -1,0 +1,1146 @@
+#if	!defined(CNTSZ)
+
+/*                             CNT000 - point CONTROL file */
+/*                             --------------------------- */
+
+/*     REVISION: */
+/*         @(#)cnt000_def	main.SVR_MASTERPROJ_Integration.R0930_Int.3 */
+
+/*     PRMDEF: */
+/*         PRMDEF are used to describe all the fields in a point record. */
+/*         PRMDEF are used by the dictionary and by code. */
+/*         points_def (via points.h) contains macros to be used by C programs. */
+/*         SEP converter handles Fortran macros $word, $bit, etc. */
+/*         points_def also contains functions for use by Fortran to operate on PRMDEF. */
+/*     SEE: points_def for description of PRMDEF and $predefa() and $prmdefb() */
+
+/*     NOTES: */
+/*	1) Reals and integer*4s must start on words 1,3,5 etc. */
+/*	2) Doubles must start on 1,5,9 etc. */
+/*	3) Sizes must be multiple of 4 to maintain 64 bit alignment. */
+
+
+#define	CNTSZ	64 /*  biggest of the folowing sizes */
+#define	CNTSZ_STA	64
+#define	CNTSZ_ANA	64
+#define	CNTSZ_ACC	16
+#define	CNTSZ_ACS	64
+#define	CNTSZ_CDA	4
+#define	CNTSZ_ASH	4
+
+#if	!defined(USE_DERIVED_TYPE)
+/*       integer(2) CNTBUF(CNTSZ) */
+#endif	
+
+/*-------- Address packet --------------------------------------------- */
+
+/*                   5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                  --------------------------------- */
+/*                1 !   T   !   -   !       S       ! */
+/*                  --------------------------------- */
+/*                2 !       F       !   R   !   B   !  # */
+/*                  ---------------------------------  # read */
+/*                3 !           address             !  # */
+/*                  --------------------------------- */
+/*                4 !       F       !   -   !   B   !  # */
+/*                  ---------------------------------  # write */
+/*                5 !           address             !  # */
+/*                  --------------------------------- */
+/*                6 !              rtu              ! */
+/*                  --------------------------------- */
+/*                      T - scan type (see SCNTBL_DEF) */
+/*                      S - scan subtype (see SCNTBL_DEF) */
+/*                      F - data format */
+/*                      R - scan rate index */
+/*                      B - bit number (status only) */
+/*                   see end of this file for more details */
+
+/* word offset constants */
+#define	ADDXTYP	1
+#define	ADDXFMT	2
+#define	ADDXADR	3
+#define	ADDXLST	3
+#define	ADDXFIL	3
+#define	ADDXSPNT	3
+#define	ADDXWFMT	4
+#define	ADDXREC	4
+#define	ADDXCWID	4
+#define	ADDXWADR	5
+#define	ADDXWRD	5
+#define	ADDXSPRM	5
+#define	ADDXRTU	6
+#define	ADDPKTSZ	6
+
+
+#pragma pack(push,2)
+typedef struct
+{
+    uint2 typ;
+    union {
+      struct {        /* database file address */
+        uint2 fmt;
+        uint2 fil;
+        uint2 rec;
+        uint2 wrd;
+        };
+      struct {        /* database point address */
+        uint2 fmt1;
+        PNTNUM pnt;
+        PRMNUM prm;
+        };
+      struct {        /* hardware address */
+        uint2 fmt2;
+        uint2 adr;
+        uint2 wfmt;
+        uint2 wadr;
+        };
+      struct {        /* list address */
+        uint2 fmt3;
+        uint2 lst;
+        uint2 notused[2];
+        };
+      struct {        /* EFM request */
+        uint2 sessionid;
+        uint4 pointer;
+        uint2 range;
+        };
+      struct {        /* connection address (only valid for UDSP) */
+        uint2 cfmt;
+        uint2 connection;
+        uint2 cwid;
+        uint2 cnotused;
+        };
+    };
+    uint2 rtu;
+} addpkt;
+#pragma pack(pop)
+
+
+
+/*--------------------------------------------------------------------- */
+
+
+/*         STATUS point */
+/*                              5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                             --------------------------------- */
+/*                           1 !   C   !   B   !   -   !   A   ! */
+/*                             --------------------------------- */
+/*                           2 !       E       !F!D!H!I!J!K!L!M! */
+/*                             --------------------------------- */
+/*                         3,8 !  PV address packet            ! */
+/*                             --------------------------------- */
+/*                        9,14 !  MD address packet            ! */
+/*                             --------------------------------- */
+/*                       15,20 !  OP address packet            ! */
+/*                             --------------------------------- */
+/*                       21,26 !  SP address packet            ! */
+/*                             --------------------------------- */
+/*                       27,32 !  A1 address packet            ! */
+/*                             --------------------------------- */
+/*                       33,38 !  A2 address packet            ! */
+/*                             --------------------------------- */
+/*                       39,44 !  A3 address packet            ! */
+/*                             --------------------------------- */
+/*                       45,50 !  A4 address packet            ! */
+/*                             --------------------------------- */
+/*                          51 !  auxilary 1 associated param. ! */
+/*                             --------------------------------- */
+/*                          52 !  auxilary 2 associated param. ! */
+/*                             --------------------------------- */
+/*                          53 !  auxilary 3 associated param. ! */
+/*                             --------------------------------- */
+/*                          54 !  auxilary 4 associated param. ! */
+/*                             --------------------------------- */
+/*                          55 !   T3  !   T2  !   T1  !   T0  ! */
+/*                             --------------------------------- */
+/*                             ! report mode for SE (SEEP) pnts! */
+/*                             !              OR               ! */
+/*                          56 ! MNTR ENTERZON rec#  (SE CHIP) ! */
+/*                             !              OR               ! */
+/*                             !   floor ENTERZON rec number   ! */
+/*                             --------------------------------- */
+/*                       57,64 !          spare                ! */
+/*                             --------------------------------- */
+
+
+typedef struct
+    {
+    uint2  flags;     /* flags (as above)      */
+    uint2  level;     /* control level         */
+    addpkt pvaddr;    /* PV address            */
+    addpkt mdaddr;    /* MD address            */
+    addpkt opaddr;    /* OP address            */
+    addpkt spaddr;    /* SP address            */
+    addpkt a1addr;    /* A1 address            */
+    addpkt a2addr;    /* A2 address            */
+    addpkt a3addr;    /* A3 address            */
+    addpkt a4addr;    /* A4 address            */
+    uint2  a1assoc;   /* A1 associated parameter */
+    uint2  a2assoc;   /* A2 associated parameter */
+    uint2  a3assoc;   /* A3 associated parameter */
+    uint2  a4assoc;   /* A4 associated parameter */
+    uint2  targets;   /* target states         */
+    uint2  reportmode;/* report mode (schlage) */
+    uint2  spare57[8];
+    } STA_CNT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(STA_CNT) <= (CNTSZ * sizeof(int2)), "STA_CNT struct is too large for CNTSZ");
+	static_assert(sizeof(STA_CNT) == (CNTSZ_STA * sizeof(int2)), "STA_CNT struct is different size to CNTSZ_STA");
+#endif
+
+
+
+#define	PVFMTP	PRMDEF_MAKEB(2, 1, 0,4) /*  A - PV format */
+#define	CNTTOI	PRMDEF_MAKEB(2, 1, 8,4) /*  B - timeout index */
+#define	PLSWID	PRMDEF_MAKEB(2, 1,12,4) /*  C - status OP pulse width code */
+/*                                                       0 - LATCHED    8 - 3S */
+/*                                                       1 - 200MS      9 - 4S */
+/*                                                       2 - 300MS      A - 5S */
+/*                                                       3 - 400MS      B - 10S */
+/*                                                       4 - 500MS      C - 20S */
+/*                                                       5 - 800MS      D - 30S */
+/*                                                       6 - 1S         E - 60S */
+/*                                                       7 - 2S         F - 120S */
+#define	CNTLVL	PRMDEF_MAKEB(2, 2, 8,8) /*  E - control level */
+/*     PRMDEF,parameter::           = $prmdefb(2, 2, 7,1) ;* F - */
+/*     PRMDEF,parameter::           = $prmdefb(2, 2, 6,1) ;* G - */
+/*     PRMDEF,parameter::           = $prmdefb(2, 2, 5,1) ;* H - */
+#define	JRNONLY	PRMDEF_MAKEB(2, 2, 4,1) /*  I - journal only */
+#define	MANPV	PRMDEF_MAKEB(2, 2, 3,1) /*  J - manual PV */
+#define	CNTINH	PRMDEF_MAKEB(2, 2, 2,1) /*  K - control inhibit */
+#define	CCONFIRM	PRMDEF_MAKEB(2, 2, 1,1) /*  L - Control confirmation required */
+#define	MDDISABLE	PRMDEF_MAKEB(2, 2, 0,1) /*  M - mode control disabled */
+#define	PVADDPKT	PRMDEF_MAKEA(2, 3,   6) /*  PV address packet */
+#define	PVADDTYP	PRMDEF_MAKEB(2, 3,12,4) /*  PV address type */
+#define	PVADDPER	PRMDEF_MAKEB(2, 4, 4,4) /*  PV address period */
+#define	PVADDFMT	PRMDEF_MAKEB(2, 4, 8,8) /*  PV address read format */
+#define	PVADDADR	PRMDEF_MAKEB(2, 5,0,16) /*  PV address read address */
+#define	PVADDWFMT	PRMDEF_MAKEB(2, 6, 8,8) /*  PV address write format */
+#define	PVADDWADR	PRMDEF_MAKEB(2, 7,0,16) /*  PV address write address */
+#define	PVADDRTU	PRMDEF_MAKEB(2, 8,0,16) /*  PV address RTU */
+#define	MDADDPKT	PRMDEF_MAKEA(2, 9,   6) /*  MD address packet */
+#define	MDADDTYP	PRMDEF_MAKEB(2, 9,12,4) /*  MD address type */
+#define	MDADDPER	PRMDEF_MAKEB(2,10, 4,4) /*  MD address period */
+#define	MDADDFMT	PRMDEF_MAKEB(2,10, 8,8) /*  MD address read format */
+#define	MDADDADR	PRMDEF_MAKEB(2,11,0,16) /*  MD address read address */
+#define	MDADDWFMT	PRMDEF_MAKEB(2,12, 8,8) /*  MD address write format */
+#define	MDADDWADR	PRMDEF_MAKEB(2,13,0,16) /*  MD address write address */
+#define	MDADDRTU	PRMDEF_MAKEB(2,14,0,16) /*  MD address RTU */
+#define	OPADDPKT	PRMDEF_MAKEA(2,15,   6) /*  OP address packet */
+#define	OPADDTYP	PRMDEF_MAKEB(2,15,12,4) /*  OP address type */
+#define	OPADDPER	PRMDEF_MAKEB(2,16, 4,4) /*  OP address period */
+#define	OPADDFMT	PRMDEF_MAKEB(2,16, 8,8) /*  OP address read format */
+#define	OPADDADR	PRMDEF_MAKEB(2,17,0,16) /*  OP address read address */
+#define	OPADDWFMT	PRMDEF_MAKEB(2,18, 8,8) /*  OP address write format */
+#define	OPADDWADR	PRMDEF_MAKEB(2,19,0,16) /*  OP address write address */
+#define	OPADDRTU	PRMDEF_MAKEB(2,20,0,16) /*  OP address RTU */
+/*     see ANA definitions for SP, A1, A2, A3, A4 addresses */
+/*     see ANA definitions for associated parameters */
+#define	CNTSTA	PRMDEF_MAKEB(2,55, 0,4) /*  T0 - input state corresponding */
+/*                                                        to output state 0 */
+#define	CNTSTA1	PRMDEF_MAKEB(2,55, 4,4) /*  T1 - input state for state 1 */
+#define	CNTSTA2	PRMDEF_MAKEB(2,55, 8,4) /*  T2 - input state for state 2 */
+#define	CNTSTA3	PRMDEF_MAKEB(2,55,12,4) /*  T3 - input state for state 3 */
+#define	MCNRPT	PRMDEF_MAKEB(2,56,0,16) /*  report mode for schlage monitor pnts */
+#define	EZONE_STA	PRMDEF_MAKEB(2,56,0,16) /*  Zone Enforcement entry zone */
+
+
+/*         ANALOG point */
+/*                              5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                             --------------------------------- */
+/*                           1 !   C   !   B   !  -    !   A   ! */
+/*                             --------------------------------- */
+/*                           2 !       E       !F!D!H!I!J!K!L!M! */
+/*                             --------------------------------- */
+/*                         3,8 !  PV address packet            ! */
+/*                             --------------------------------- */
+/*                        9,14 !  MD address packet            ! */
+/*                             --------------------------------- */
+/*                       15,20 !  OP address packet            ! */
+/*                             --------------------------------- */
+/*                       21,26 !  SP address packet            ! */
+/*                             --------------------------------- */
+/*                       27,32 !  A1 address packet            ! */
+/*                             --------------------------------- */
+/*                       33,38 !  A2 address packet            ! */
+/*                             --------------------------------- */
+/*                       39,44 !  A3 address packet            ! */
+/*                             --------------------------------- */
+/*                       45,50 !  A4 address packet            ! */
+/*                             --------------------------------- */
+/*                          51 !  auxilary 1 associated param. ! */
+/*                             --------------------------------- */
+/*                          52 !  auxilary 2 associated param. ! */
+/*                             --------------------------------- */
+/*                          53 !  auxilary 3 associated param. ! */
+/*                             --------------------------------- */
+/*                          54 !  auxilary 4 associated param. ! */
+/*                             --------------------------------- */
+/*                       55,56 !  op low clamp (%)             ! */
+/*                             --------------------------------- */
+/*                       57,58 !  op high clamp (%)            ! */
+/*                             --------------------------------- */
+/*                       59,60 !  sp low clamp (eu)            ! */
+/*                             --------------------------------- */
+/*                       61,62 !  sp high clamp (eu)           ! */
+/*                             --------------------------------- */
+/*                       63,64 !          spare                ! */
+/*                             --------------------------------- */
+
+
+typedef struct
+    {
+    uint2  flags;     /* flags (as above)        */
+    uint2  level;     /* control level           */
+    addpkt pvaddr;    /* PV address              */
+    addpkt mdaddr;    /* MD address              */
+    addpkt opaddr;    /* OP address              */
+    addpkt spaddr;    /* SP address              */
+    addpkt a1addr;    /* A1 address              */
+    addpkt a2addr;    /* A2 address              */
+    addpkt a3addr;    /* A3 address              */
+    addpkt a4addr;    /* A4 address              */
+    uint2  a1assoc;   /* A1 associated parameter */
+    uint2  a2assoc;   /* A2 associated parameter */
+    uint2  a3assoc;   /* A3 associated parameter */
+    uint2  a4assoc;   /* A4 associated parameter */
+    float  oplo;      /* OP low  limit           */
+    float  ophi;      /* OP high limit           */
+    float  splo;      /* SP low  limit           */
+    float  sphi;      /* SP high limit           */
+    uint2  spare63[2];
+    } ANA_CNT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(ANA_CNT) <= (CNTSZ * sizeof(int2)), "ANA_CNT struct is too large for CNTSZ");
+	static_assert(sizeof(ANA_CNT) == (CNTSZ_ANA * sizeof(int2)), "ANA_CNT struct is different size to CNTSZ_ANA");
+#endif
+
+
+
+#define	SPADDPKT	PRMDEF_MAKEA(2,21,   6) /*  SP address packet */
+#define	SPADDTYP	PRMDEF_MAKEB(2,21,12,4) /*  SP address type */
+#define	SPADDPER	PRMDEF_MAKEB(2,22, 4,4) /*  SP address period */
+#define	SPADDFMT	PRMDEF_MAKEB(2,22, 8,8) /*  SP address read format */
+#define	SPADDADR	PRMDEF_MAKEB(2,23,0,16) /*  SP address read address */
+#define	SPADDWFMT	PRMDEF_MAKEB(2,24, 8,8) /*  SP address write format */
+#define	SPADDWADR	PRMDEF_MAKEB(2,25,0,16) /*  SP address write address */
+#define	SPADDRTU	PRMDEF_MAKEB(2,26,0,16) /*  SP address RTU */
+#define	A1ADDPKT	PRMDEF_MAKEA(2,27,   6) /*  A1 address packet */
+#define	A1ADDTYP	PRMDEF_MAKEB(2,27,12,4) /*  A1 address type */
+#define	A1ADDPER	PRMDEF_MAKEB(2,28, 4,4) /*  A1 address period */
+#define	A1ADDFMT	PRMDEF_MAKEB(2,28 ,8,8) /*  A1 address read format */
+#define	A1ADDADR	PRMDEF_MAKEB(2,29,0,16) /*  A1 address read address */
+#define	A1ADDWFMT	PRMDEF_MAKEB(2,30, 8,8) /*  A1 address write format */
+#define	A1ADDWADR	PRMDEF_MAKEB(2,31,0,16) /*  A1 address write address */
+#define	A1ADDRTU	PRMDEF_MAKEB(2,32,0,16) /*  A1 address RTU */
+#define	A2ADDPKT	PRMDEF_MAKEA(2,33,   6) /*  A2 address packet */
+#define	A2ADDTYP	PRMDEF_MAKEB(2,33,12,4) /*  A2 address type */
+#define	A2ADDPER	PRMDEF_MAKEB(2,34, 4,4) /*  A2 address period */
+#define	A2ADDFMT	PRMDEF_MAKEB(2,34, 8,8) /*  A2 address read format */
+#define	A2ADDADR	PRMDEF_MAKEB(2,35,0,16) /*  A2 address read address */
+#define	A2ADDWFMT	PRMDEF_MAKEB(2,36, 8,8) /*  A2 address write format */
+#define	A2ADDWADR	PRMDEF_MAKEB(2,37,0,16) /*  A2 address write address */
+#define	A2ADDRTU	PRMDEF_MAKEB(2,38,0,16) /*  A2 address RTU */
+#define	A3ADDPKT	PRMDEF_MAKEA(2,39,   6) /*  A3 address packet */
+#define	A3ADDTYP	PRMDEF_MAKEB(2,39,12,4) /*  A3 address type */
+#define	A3ADDPER	PRMDEF_MAKEB(2,40, 4,4) /*  A3 address period */
+#define	A3ADDFMT	PRMDEF_MAKEB(2,40, 8,8) /*  A3 address read format */
+#define	A3ADDADR	PRMDEF_MAKEB(2,41,0,16) /*  A3 address read address */
+#define	A3ADDWFMT	PRMDEF_MAKEB(2,42, 8,8) /*  A3 address write format */
+#define	A3ADDWADR	PRMDEF_MAKEB(2,43,0,16) /*  A3 address write address */
+#define	A3ADDRTU	PRMDEF_MAKEB(2,44,0,16) /*  A3 address RTU */
+#define	A4ADDPKT	PRMDEF_MAKEA(2,45,   6) /*  A4 address packet */
+#define	A4ADDTYP	PRMDEF_MAKEB(2,45,12,4) /*  A4 address type */
+#define	A4ADDPER	PRMDEF_MAKEB(2,46, 4,4) /*  A4 address period */
+#define	A4ADDFMT	PRMDEF_MAKEB(2,46, 8,8) /*  A4 address read format */
+#define	A4ADDADR	PRMDEF_MAKEB(2,47,0,16) /*  A4 address read address */
+#define	A4ADDWFMT	PRMDEF_MAKEB(2,48, 8,8) /*  A4 address write format */
+#define	A4ADDWADR	PRMDEF_MAKEB(2,49,0,16) /*  A4 address write address */
+#define	A4ADDRTU	PRMDEF_MAKEB(2,50,0,16) /*  A4 address RTU */
+
+#define	A1SOCP	PRMDEF_MAKEB(2,51,0,16) /*  auxilary 1 associated parameter */
+#define	A2SOCP	PRMDEF_MAKEB(2,52,0,16) /*  auxilary 2 associated parameter */
+#define	A3SOCP	PRMDEF_MAKEB(2,53,0,16) /*  auxilary 3 associated parameter */
+#define	A4SOCP	PRMDEF_MAKEB(2,54,0,16) /*  auxilary 4 associated parameter */
+
+#define	OPLOP	PRMDEF_MAKEB(2,55, 0,0) /*  output low clamp */
+#define	OPHIP	PRMDEF_MAKEB(2,57, 0,0) /*  output high clamp */
+#define	SPLOP	PRMDEF_MAKEB(2,59, 0,0) /*  setpoint low clamp */
+#define	SPHIP	PRMDEF_MAKEB(2,61, 0,0) /*  setpoint high clamp */
+#if	!defined(USE_DERIVED_TYPE)
+/*       real          OPLOV ,OPHIV ,SPLOV ,SPHIV */
+/*       integer(2)    AXSOC(4) */
+/*       equivalence ( OPLOV , $buf(OPLOP ) ) */
+/*       equivalence ( OPHIV , $buf(OPHIP ) ) */
+/*       equivalence ( SPLOV , $buf(SPLOP ) ) */
+/*       equivalence ( SPHIV , $buf(SPHIP ) ) */
+/*       equivalence ( AXSOC , $buf(A1SOCP) ) */
+#endif	
+
+
+
+/*         ACCUML point */
+/*                              5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                             --------------------------------- */
+/*                           1 !   C   !   B   !  -    !   A   ! */
+/*                             --------------------------------- */
+/*                           2 !       E       !F!D!H!I!J!K!L!M! */
+/*                             --------------------------------- */
+/*                         3,8 !  PV address packet            ! */
+/*                             --------------------------------- */
+/*                        9,14 !  MD address packet            ! */
+/*                             --------------------------------- */
+/*                       15,16 !  spare                        ! */
+/*                             --------------------------------- */
+
+
+typedef struct
+    {
+    uint2  flags;     /* flags (as above)     */
+    uint2  level;     /* control level        */
+    addpkt pvaddr;    /* PV address           */
+    addpkt mdaddr;    /* MD address           */
+    uint2  spare15[2];
+    } ACC_CNT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(ACC_CNT) <= (CNTSZ * sizeof(int2)), "ACC_CNT struct is too large for CNTSZ");
+	static_assert(sizeof(ACC_CNT) == (CNTSZ_ACC * sizeof(int2)), "ACC_CNT struct is different size to CNTSZ_ACC");
+#endif
+
+
+
+
+
+/*         ACCESS point */
+/*                              5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                             --------------------------------- */
+/*                           1 !   C   !   B   !       -       ! */
+/*                             --------------------------------- */
+/*                           2 !       E       ! - - - - - !F!D! */
+/*                             --------------------------------- */
+/*                         3,8 !  PV address packet            ! */
+/*                             --------------------------------- */
+/*                           9 !  Unlock time (1-240)(schlage) ! */
+/*                             --------------------------------- */
+/*                          10 !  Sensor Type 0=normal,1=open, ! */
+/*                             !              2=closed,3=station! */
+/*                             --------------------------------- */
+/*                          11 !  Anti Passback 0=none, 1=entry! */
+/*                             !                2=exit         ! */
+/*                             --------------------------------- */
+/*                          12 !  Door Switch ( 0 - 32 )       ! */
+/*                             --------------------------------- */
+/*                          13 !  Auto Unlock Time Period 1    ! */
+/*                             --------------------------------- */
+/*                          14 !  Auto Unlock Time Period 2    ! */
+/*                             --------------------------------- */
+/*                          15 !  Auto Unlock Time Period 3    ! */
+/*                             --------------------------------- */
+/*                          16 !  Auto Unlock Time Period 4    ! */
+/*                             --------------------------------- */
+/*                          17 !  REX  Switch ( 0 - 32 )       ! */
+/*                             --------------------------------- */
+/*                          18 !  Door Forced Open REPORT MODE ! */
+/*                             --------------------------------- */
+/*                          19 !  Door Open Long   REPORT MODE ! */
+/*                             --------------------------------- */
+/*                          20 !  maximum door open time 1-240 ! */
+/*                             --------------------------------- */
+/*                          21 !  Access Granted   REPORT MODE ! */
+/*                             --------------------------------- */
+/*                          22 !  Access Denied    REPORT MODE ! */
+/*                             --------------------------------- */
+/*                          23 !  COAX failed      REPORT MODE ! */
+/*                             --------------------------------- */
+/*                          24 !  SENSOR failed    REPORT MODE ! */
+/*                             --------------------------------- */
+/*                          25 !  Key Trace        REPORT MODE ! */
+/*                             --------------------------------- */
+/*                          26 !R2 Type!R1 Type!P!A! !M!S!V!U!R! */
+/*                             --------------------------------- */
+/*                             ! Reader 1 Type = 0 Sensor      ! */
+/*                             !               = 1 DKR         ! */
+/*                             !               = 2 SCR         ! */
+/*                             !               = 3 MSR5        ! */
+/*                             !               = 4 MSRK5       ! */
+/*                             ! Reader 2 Type = 0 Sensor      ! */
+/*                             !               = 1 DKR         ! */
+/*                             !               = 2 SCR         ! */
+/*                             !               = 3 MSR5        ! */
+/*                             !               = 4 MSRK5       ! */
+/*                             !       R =  Reverse Action Lock (1 = yes ) */
+/*                             !       U =  Rex Unlock ( 1 = yes ) */
+/*                             !       V =  Vip Enable ( 1=yes) */
+/*                             !       S =  Sensor Disable( 1=yes) */
+/*                             !       M =  MSM Disable( 1=yes)(818Sc only) */
+/*                             !       A =  Antipassback type for 818SX/SC */
+/*                             !            0 = Hard, 1 = Soft ( RESERVED ) */
+/*                             !       P =  Read key while door open ( 1=yes) */
+/*                             --------------------------------- */
+/*                          27 !  Valid REX   Time Period 1    ! */
+/*                             --------------------------------- */
+/*                          28 !  Valid REX   Time Period 2    ! */
+/*                             --------------------------------- */
+/*                          29 !  Valid REX   Time Period 3    ! */
+/*                             --------------------------------- */
+/*                          30 !  Valid REX   Time Period 4    ! */
+/*                             --------------------------------- */
+/*                          31 !  MSM failed       REPORT MODE ! */
+/*                             --------------------------------- */
+/*                          32 !  Exit Granted     REPORT MODE ! */
+/*                             --------------------------------- */
+/*                          33 !  Exit Denied      REPORT MODE ! */
+/*                             --------------------------------- */
+/*                          34 !  Passback Type 0=hard, 1=soft ! */
+/*                             --------------------------------- */
+/*                          35 !  Vip Failed       REPORT MODE ! */
+/*                             --------------------------------- */
+/*                          36 ! Vip/SCR/DKR Tamper REPORT MODE! */
+/*                             --------------------------------- */
+/*                          37 !  Vip Enable Time Period #1    ! */
+/*                             --------------------------------- */
+/*                          38 !  Vip Enable Time Period #2    ! */
+/*                             --------------------------------- */
+/*                          39 !  Vip Enable Time Period #3    ! */
+/*                             --------------------------------- */
+/*                          40 !  Vip Enable Time Period #4    ! */
+/*                             --------------------------------- */
+/*                          41 !  Vip Enable Building Modes    ! */
+/*                             !       bit 7 = Closed          ! */
+/*                             !       bit 6 = Limited         ! */
+/*                             !       bit 5 = Open            ! */
+/*                             --------------------------------- */
+/*                          42 ! Secondary reader fail report  ! */
+/*                             --------------------------------- */
+/*                          43 ! Door Relay ID                 ! */
+/*                             --------------------------------- */
+/*                          44 ! SE CHIP DATA Index            ! */
+/*                             --------------------------------- */
+/*                       45-52 !         s p a r e             ! */
+/*                             --------------------------------- */
+/*                          53 !  Minimum resolution (same key)! */
+/*                             --------------------------------- */
+/*                          54 !          spare                ! */
+/*                             --------------------------------- */
+/*                          55 !          spare                ! */
+/*                             --------------------------------- */
+/*                          56 !          spare                ! */
+/*                             --------------------------------- */
+/*                          57 !          spare                ! */
+/*                             --------------------------------- */
+/*                       58-60 ! OPERID OF LAST OPERATOR TO MOD! */
+/*                             --------------------------------- */
+/*                             ! TIME OF LAST MODIFICATION     ! */
+/*                          61 !  - date                       ! */
+/*                          62 !  - time                       ! */
+/*                          63 !  - flags                      ! */
+/*                             --------------------------------- */
+/*                          64 !          spare                ! */
+/*                             --------------------------------- */
+
+
+typedef struct
+    {
+    uint2  flags;     /* flags (as above)  */
+    uint2  level;     /* control level     */
+    addpkt pvaddr;    /* PV address        */
+    uint2  TheRest[CNTSZ_ACS-8];
+    } ACS_CNT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(ACS_CNT) <= (CNTSZ * sizeof(int2)), "ACS_CNT struct is too large for CNTSZ");
+	static_assert(sizeof(ACS_CNT) == (CNTSZ_ACS * sizeof(int2)), "ACS_CNT struct is different size to CNTSZ_ACS");
+#endif
+
+
+
+#define	ACNNODEL_OFF	9     /*  Position from which not to delete */
+/*                                                    when an access point is deleted. */
+#define	ACNUTM	PRMDEF_MAKEB(2, 9,0,8)     /*  Door Unlock time */
+#define	ACNSTP	PRMDEF_MAKEB(2,10,0,8)     /*  sensor type */
+#define	ACNAPB	PRMDEF_MAKEB(2,11,0,8)     /*  Anti passback type */
+#define	ACNDS	PRMDEF_MAKEB(2,12,0,8)     /*  door switch no */
+#define	ACNAUT_OFF	13       /*  off set for auto unlock tps */
+#define	ACNAUT_PRM	PRMDEF_MAKEB(2,13,0,16)/*  Parameter address for first auto unlock TP. */
+#define	ACNMAX_TPD_SEGS	3  /*  num of segs of tp for door */
+#define	ACNMAX_TPDS	4      /*  num of time periods per seg */
+#define	ACNREX	PRMDEF_MAKEB(2,17,0,8)     /*  REX switch no */
+#define	ACNFRM	PRMDEF_MAKEB(2,18,0,8)     /*  Door Forced open Report Mode */
+#define	ACNHRM	PRMDEF_MAKEB(2,19,0,8)     /*  Door HELD open Report Mode */
+#define	ACNMTM	PRMDEF_MAKEB(2,20,0,8)     /*  Maximum door open time */
+#define	ACNGRM	PRMDEF_MAKEB(2,21,0,8)     /*  Access Granted Report Mode */
+#define	ACNDRM	PRMDEF_MAKEB(2,22,0,8)     /*  Access Denied Report Mode */
+#define	ACNCRM	PRMDEF_MAKEB(2,23,0,8)     /*  COAX failed Report Mode */
+#define	ACNSRM	PRMDEF_MAKEB(2,24,0,8)     /*  Sensor failed Report Mode */
+#define	ACNTRM	PRMDEF_MAKEB(2,25,0,8)     /*  Key Trace Report Mode */
+#define	ACNFRTP	PRMDEF_MAKEB(2,26,8,4)    /*  First Reader Type */
+#define	ACNFRTP_SP	0x0408	  /*  First Reader Type Start Position (LSB) and length (MSB) */
+#define	ACNSRTP	PRMDEF_MAKEB(2,26,12,4)   /*  Second Reader Type */
+#define	ACNSRTP_SP	0x040C	  /*  Second Reader Type Start Position (LSB) and length (MSB) */
+#define	ACNRTP_SENSOR	0
+#define	ACNRTP_DKR	1
+#define	ACNRTP_SCR	2
+#define	ACNRTP_MSR5	3
+#define	ACNRTP_MSRK5	4
+#define	ACNFLG	PRMDEF_MAKEB(2,26,0,8)     /*  Door Flags */
+
+/*                                       ;* Bit 0 = Reverse Action Lock 1=Yes */
+/*                                       ;* Bit 1 = Rex Unlock          1=Yes */
+/*                                       ;* Bit 2 = Vip Enable          1=Yes */
+/*                                       ;* Bit 3 = Sensor Disable      1=Yes */
+/*                                       ;* Bit 4 = MSM Disable         1=Yes */
+/*                                       ;* Bit 5 = Reserved */
+/*                                       ;* Bit 6 = Passback type 0=Hard,1=soft */
+/*                                       ;*         for 818 onwards only */
+/*                                       ;* Bit 7 = Read key when door open 1=Yes */
+
+#define	ACNFLG_RAL	0       /*  Reverse Action Lock bit in flags */
+#define	ACNFLG_REX	1       /*  Rex Unlock bit in flags */
+#define	ACNFLG_VIP	2       /*  Vip Enable bit in flags */
+#define	ACNFLG_SNS	3       /*  Sensor Disable bit in flags */
+#define	ACNFLG_MSM	4       /*  MSM Disable bit in flags */
+#define	ACNFLG_PBT	6       /*  pass back type bit for 818 in flags */
+#define	ACNFLG_RKO	7       /*  Read key when door open bit in flags */
+#define	ACNSDS	PRMDEF_MAKEB(2,26,3,1) /*  Sensor disable bit */
+#define	ACNRTM_OFF	27      /*  off set for rex tps */
+#define	ACNRTM_PRM	PRMDEF_MAKEB(2,27,0,16) /*  Parameter address for first Valid REX TP. */
+#define	ACNMRM	PRMDEF_MAKEB(2,31,0, 8) /*  MSM failed Report Mode */
+#define	ACNEGR	PRMDEF_MAKEB(2,32,0, 8) /*  Exit Granted Report Mode */
+#define	ACNEDR	PRMDEF_MAKEB(2,33,0, 8) /*  Exit Denied Report Mode */
+#define	ACNPBT	PRMDEF_MAKEB(2,34,0, 8) /*  Passback type */
+#define	ACNVFR	PRMDEF_MAKEB(2,35,0, 8) /*  Vip Failed Report Mode */
+#define	ACNVTR	PRMDEF_MAKEB(2,36,0, 8) /*  Vip Tamper Report Mode */
+#define	ACNVET_OFF	37      /*  Vip Enable Time periods offset */
+#define	ACNVET_PRM	PRMDEF_MAKEB(2,37,0,16) /*  Parameter address for first VIP Enable TP. */
+#define	ACNVEM	PRMDEF_MAKEB(2,27,0, 8) /*  Vip Enable building Modes */
+#define	ACNVEM_OP	5       /*  Vip Enable building open */
+#define	ACNVEM_LI	6       /*  Vip Enable building limited */
+#define	ACNVEM_CL	7       /*  Vip Enable building closed */
+
+#define	ACNMAX_DR_RPTS	13  /*  num of reports for door */
+#define	ACNMAX_DR_UTM	240  /*  maximum schlage door unlock time */
+#define	ACNMAX_DR_OTM	240  /*  maximum schlage door open time */
+
+#define	ACNSRFR	PRMDEF_MAKEB(2,42,0,8)     /*  Secondary SNET reader fail report */
+#define	ACNRLY	PRMDEF_MAKEB(2,43,0,8)     /*  Relay ID (in place of MSM fail RM for SE4100) */
+#define	ACNRLY_MAX	16        /*  Relay ID maximum */
+#define	ACNRLY_AXSSII_MAX	10 /*  Relay ID maximum for AXSSII */
+
+#define	ACNCHPIDX	PRMDEF_MAKEB(2,44,0,16)  /*  CHIP DATA index */
+#define	ACNTMS	PRMDEF_MAKEB(2,58,0,16)  /*  time stamp last operator id */
+#define	ACNMFG	PRMDEF_MAKEB(2,63,0,16)  /*  time stamp modification flag */
+
+#if	!defined(USE_DERIVED_TYPE)
+/*       integer(2)  ACNAUT(ACNMAX_TPDS)	;* Auto Unlock time periods */
+/*       integer(2)  ACNRTM(ACNMAX_TPDS)	;* REX time periods */
+/*       integer(2)  ACNVET(ACNMAX_TPDS)	;* Vip enable Time periods */
+/*       equivalence (ACNAUT,CNTBUF(ACNAUT_OFF)) */
+/*       equivalence (ACNRTM,CNTBUF(ACNRTM_OFF)) */
+/*       equivalence (ACNVET,CNTBUF(ACNVET_OFF)) */
+#endif	
+
+
+
+/*         CDA point (and other GDA type points) */
+
+/*                              5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                             --------------------------------- */
+/*                           1 !   C   !   B   !       -       ! */
+/*                             --------------------------------- */
+/*                           2 !       E       !F!D!H!I!J!K!L!M! */
+/*                             --------------------------------- */
+/*                         3,4 !          spare                ! */
+/*                             --------------------------------- */
+
+
+typedef struct
+    {
+    uint2 flags;		/* flags (as above)		*/
+    uint2 level;		/* control level		*/
+    uint2 spare3[2];
+    } CDA_CNT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(CDA_CNT) <= (CNTSZ * sizeof(int2)), "CDA_CNT struct is too large for CNTSZ");
+	static_assert(sizeof(CDA_CNT) == (CNTSZ_CDA * sizeof(int2)), "CDA_CNT struct is different size to CNTSZ_CDA");
+#endif
+
+
+
+
+
+/*         ASH point (and other hierarchy points) */
+
+/*                              5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                             --------------------------------- */
+/*                           1 !   C   !   B   !       -       ! */
+/*                             --------------------------------- */
+/*                           2 !       E       !F!D!H!I!J!K!L!M! */
+/*                             --------------------------------- */
+/*                         3,4 !          spare                ! */
+/*                             --------------------------------- */
+
+
+typedef struct
+    {
+    uint2 flags;		/* flags (as above)		*/
+    uint2 level;		/* control level		*/
+    uint2 spare3[2];
+    } ASH_CNT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(ASH_CNT) <= (CNTSZ * sizeof(int2)), "ASH_CNT struct is too large for CNTSZ");
+	static_assert(sizeof(ASH_CNT) == (CNTSZ_ASH * sizeof(int2)), "ASH_CNT struct is different size to CNTSZ_ASH");
+#endif
+
+
+
+
+/*-------- Address packet --------------------------------------------- */
+
+
+
+/*--- FS90 Address packet --- */
+
+/*                              5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                             --------------------------------- */
+/*                           1 !   A   !   B   !       -       ! */
+/*                             --------------------------------- */
+/*                           2 !       C       !   D   !   E   !  # */
+/*                             ---------------------------------  # read */
+/*                           3 ! Priority data (Non PV control)!  # */
+/*                             --------------------------------- */
+/*                           4 !       C       !   -   !   E   !  # */
+/*                             ---------------------------------  # write */
+/*                           5 !   Priority data (PV Control)  !  # */
+/*                             --------------------------------- */
+/*                           6 !              rtu              ! */
+/*                             --------------------------------- */
+
+/*--- Non FS90 Address packet --- */
+
+/*                              5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                             --------------------------------- */
+/*                           1 !   A   !   B   !       -       ! */
+/*                             --------------------------------- */
+/*                           2 !       C       !   D   !   E   !  # */
+/*                             ---------------------------------  # read */
+/*                           3 !           address             !  # */
+/*                             --------------------------------- */
+/*                           4 !       C       !   -   !   E   !  # */
+/*                             ---------------------------------  # write */
+/*                           5 !           address             !  # */
+/*                             --------------------------------- */
+/*                           6 !              rtu              ! */
+/*                             --------------------------------- */
+
+/*                             A - scan type (see SCNTBL_DEF) */
+
+/*                             B - parameter */
+
+/*                   The DPS6 data types for each parameter are: */
+/*                   PV   MD   OP   SP   A1   A2   A3   A4 */
+/*          Status.  I2   I2   I2    -    -    -    -    - */
+/*          Analog.  RL   I2   RL   RL   RL   RL   RL   RL */
+/*          Accuml.  RL   I2    -    -    -    -    -    - */
+
+/*                             C - data format */
+
+/*                                        Whole value formats */
+/*                                           0 ;* whole word */
+#define	HALFWD	1 /*  upper half word */
+#define	B0	2 /*  TDC B0 */
+#define	B4	3 /*  TDC B4 */
+#define	B7	4 /*  TDC B7 */
+#define	B12	5 /*  TDC B12 */
+#define	B15	6 /*  TDC B15 */
+#define	T1	7 /*  TDC integral coefficient */
+#define	T2	8 /*  TDC derivative coefficient */
+#define	TD	9 /*  TDC filter constant */
+#define	MFCFP	10 /*  MFC floating point */
+#define	PMXFP	11 /*  PMX floating point */
+#define	VAXFP	12 /*  VAX floating point */
+#define	DPS6FP	13 /*  DPS6 floating point (native real) */
+#define	DPS6I4	14 /*  DPS6 integer*4 (native int4) */
+#define	DPS6DP	15 /*  DPS6 double precission (native dble) */
+#define	C16	16 /*  16 bit counter */
+#define	SREAL	17 /*  SMITH - short real */
+#define	LREAL	18 /*  SMITH - long real */
+#define	C3BCD	19 /*  3 digit BCD 0 to 999 counts */
+#define	C4BCD	20 /*  4 digit BCD 0 to 9999 counts */
+#define	C8BCD	21 /*  8 digit BCD 0 to 99999999 counts */
+#define	XLPCC	22 /*  EXCEL PLUS run time - cycle counts */
+#define	XLPRH	23 /*  EXCEL PLUS run time - run hours */
+#define	R32	24 /*  ASEA PLC - 32 bits real */
+#define	HIGHWORD	25 /*  ASEA PLC - hi-word of 32 bits Bool */
+#define	LOWWORD	26 /*  ASEA PLC - lo-word of 32 bits Bool */
+#define	IEEEFP	27 /*  IEEE Floating Point (Big Endian) */
+#define	IEEEFPL	28 /*  IEEE Floating Point (Little Endian) */
+#define	DPS6I2	29 /*  DPS6 integer(2) (native I2) */
+#define	MFCTM	30 /*  MFC timer value */
+#define	MODE	31 /*  mode */
+#define	IEEEFPBB	32 /*  byte swapped Big Endian float */
+#define	IEEEFPLB	33 /*  byte swapped Little Endian float */
+#define	S32BB	34 /*  32 bit signed binary Big Endian */
+#define	U32BB	35 /*  32 bit unsigned binary Big Endian */
+#define	DPIEEEFP	36 /*  Double IEEE Floating Point (Big Endian) */
+#define	DPIEEEFPL	37 /*  Double IEEE Floating Point (Little Endian) */
+#define	DPIEEEFPBB	38 /*  Double IEEE Floating Point (Big Endian byte swapped) */
+#define	DPIEEEFPLB	39 /*  Double IEEE Floating Point (Little Endian byte swapped) */
+#define	DATTM	40 /*  Date Time (converted to VT_DATE double precision) */
+
+#define	S32B	51 /*  32 bit signed binary */
+#define	U32B	52 /*  32 bit unsigned binary */
+#define	DPR3V	53 /*  DPR3000 value (32 bit) */
+#define	MMU	54 /*  Moore Mycro */
+#define	FS90PVA	55 /*  FS90 Analog PV */
+#define	FS90DC	56 /*  FS90 Door Control */
+#define	FS90DS	57 /*  FS90 Door Status */
+#define	FS90RDR	58 /*  FS90 Reader */
+#define	FS90SEC	59 /*  FS90 Security */
+
+#define	USRFMT1	101 /*  unscaled user format 1 */
+/*			       ... */
+#define	USRFMTN	120 /*  unscaled user format n (last one) */
+
+#define	FENUM	125 /*  enumerated integer */
+#define	FTEXT	126 /*  text */
+#define	REVWD	127 /*  reverse word */
+
+/*                                               Scaled value formats */
+#define	SCALED	128
+#define	U1023	128      /*      0 to 1023   (U=unsigned) */
+#define	U4095	129      /*      0 to 4095 */
+#define	U9999	130      /*      0 to 9999 */
+#define	S9999	131      /*  -9999 to 9999   (S=signed) */
+#define	B12E	132      /*  TDC pv,sp,op    (B12 247 to 3847) */
+#define	B12ES	133      /*  TDC DHP analogs (B12 967 to 3847) */
+#define	U999	134      /*      0 to  999 */
+#define	B12S	135      /*  TDC dev.alarms  (B12   0 to 3600) */
+#define	PIUOP	136      /*  TDC PIU output  (B10  62 to  962) */
+#define	U3BCD	137      /*  3 digit BCD 0 to 999 */
+#define	U4BCD	138      /*  4 digit BCD 0 to 9999 */
+#define	U6BCD	139      /*  6 digit BCD 0 to 999999 */
+#define	U8BCD	140      /*  8 digit BCD 0 to 99999999 */
+#define	UBCD16	141      /*  4 digit BCD 0 to 4095 */
+#define	UBCD12	142      /*  3 digit BCD 0 to 410 */
+#define	U16B	143      /*  16 bit unsigned binary */
+#define	S16B	144      /*  16 bit signed binary */
+#define	E3BCD	145      /*  3 digit BCD with error status */
+#define	U100	146      /*  0 to 100 percent */
+#define	U15B	147      /*  15 bit unsigned binary */
+#define	U14B	148      /*  14 bit unsigned binary */
+#define	SLC_AI	149      /*  A-B SLC Analog Input 3277 to 16384 */
+#define	SLC_AO	150      /*  A-B SLC Analog Output 6242to 31208 */
+#define	U9998	151      /*      0 to 9998 for Square D AI */
+#define	S8B	152      /*  8 bit signed binary */
+#define	U8B	153      /*  8 bit unsigned binary */
+#define	D9999	154      /*  double integer for A-B QCL */
+#define	MMUS	155      /*  Moore Mycro scaled */
+#define	FSC0TO20MA	156 /*  FSC 0 to 20mA */
+#define	FSC4TO20MA	157 /*  FSC 4 to 20mA */
+#define	FSC0TO5V	158 /*  FSC 0 to 5V */
+#define	FSC1TO5V	159 /*  FSC 1 to 5V */
+#define	FSC0TO10V	160 /*  FSC 0 to 10V */
+#define	FSC2TO10V	161 /*  FSC 2 to 10V */
+#define	S32BS	162 /*  32 bit signed binary */
+#define	U32BS	163 /*  32 bit unsigned binary */
+#define	S32BSB	164 /*  32 bit signed binary Big Endian */
+#define	U32BSB	165 /*  32 bit unsigned binary Big Endian */
+#define	SM0TO20MA	166 /*  SM 0 to 20mA */
+#define	SM4TO20MA	167 /*  SM 4 to 20mA */
+#define	SM0TO5V	168 /*  SM 0 to 5V */
+#define	SM1TO5V	169 /*  SM 1 to 5V */
+#define	SM0TO10V	170 /*  SM 0 to 10V */
+#define	SM2TO10V	171 /*  SM 2 to 10V */
+
+#define	USRFMT1S	231   /*  scaled user format 1 */
+/*			       ... */
+#define	USRFMTNS	250   /*  caled user format n (last one) */
+
+/*                             D - scan rate index */
+
+/*                             E - bit number (status only) */
+
+
+/*-------- Address ---------------------------------------------------- */
+
+/*         Address is both scan type and device type dependent. */
+
+/*         Scan type 0 - there is no address */
+
+/*         Scan type 1 - requires 3 words. Same address is used for writing */
+/*                       since address resides in words 3,4, and 5 of packet. */
+/*                             word 3   - file number */
+/*                                  4   - record number */
+/*                                  5   - word number (bits 0-11) */
+/*                                      - width (bits 12-15) */
+
+/*         Scan type 8 - requires 3 words. Same address is used for writing */
+/*                       since address resides in words 3,4, and 5 of packet. */
+/*                             word 3,4 - point number */
+/*                                  5   - parameter number */
+
+/*         Scan type 2 - 1 word, device dependent */
+
+/*                   TDC2000 - 11 bit box address */
+#define	MSGCFM	-2          /*  special address for message confirm */
+#define	BOXSTS	-1          /*  special address for box status control */
+/*                                                 ;* box status values */
+#define	BOXCLR	0          /*    "CLR" function */
+#define	BOXSTR	1          /*    "STR" function */
+#define	BOXIDL	2          /*    "IDL" function */
+#define	BOXPRC	3          /*    "PRC" function */
+#define	BOXSWT	4          /*    "SWT" function */
+#define	BOXTST	5          /*    "TST" function */
+#define	BOXSAV	6          /*    "SAV" function */
+#define	BOXSWB	7          /*    "SWB" function */
+#define	BOXENB	8          /*    "ENB" function */
+#define	BOXDIS	9          /*    "DIS" function */
+
+/*                   Hydril  - z'afgd' */
+/*                                       a - applications flag (bit 15) */
+/*                                       f - field */
+/*                                       g - group */
+/*                                       d - data type */
+
+/*                   GE 6    - address    0-1023 == inputs 1-1024 */
+/*                             address 1024-2047 == outputs 1-1024 */
+/*                             address 2048-8191 == registers 1-6144 */
+
+/*                   R1200   - point number (1-255) */
+
+/*                   Schlage - b'000000cccdddaaaa' */
+/*                                       c - controller     (0- 7) --> (1- 8) */
+/*                                       d - door number    (0- 7) --> (1- 8) */
+/*                                       a - address        (0-15) */
+/*                                                0 - monitor 1 */
+/*                                                1 - monitor 2 */
+/*                                                2 - monitor 3 */
+/*                                                3 - monitor 4 */
+/*                                                4 - access card reader */
+/*                                                5 - door monitior */
+/*                                                6 - door lock */
+/*                                                7 - msm */
+/*                                                8 - coax */
+/*                                                9 - sensor */
+/*                                               10 - 708p communications */
+/*                                               11 - building status */
+/*                                               12 - 708 power */
+/*                                               13 - 764 power */
+/*                                               14 - 708 tamper */
+/*                                               15 - 764 tamper */
+
+/*                   PMX     - PMX's internal point number */
+
+/*                   IPC     - i/o number. */
+/*                             (0-8179 represents 1-8180) */
+
+/*                   MODICON - bits 15-0  - address */
+/*                                          (0-8179 represents 1-8180) */
+
+/*                   S9000   - type 0:   i/o number */
+/*                             type 1,2: block*32+index */
+
+/*                   BB	    - entry number in SCNPAD record */
+/*                             (one SCNPAD record per rtu). */
+
+/*                   EXCEL   - bits 15-14 - i/o type */
+/*                                                0 - digital board */
+/*                                                1 - combination dig/ana board */
+/*                                                2 - parameter */
+/*                                                3 - z register */
+/*                             bits 13-7  - board number (0-8) */
+/*                                            board 0   - system status */
+/*                                            board 1-7 - input boards */
+/*                                            board 8   - alarms */
+/*                                          file number (0-127) */
+/*                             bits 6-0   - point number -1 (0-35) */
+/*                                          parameter number -1 (0-126) */
+/*                                          z-register number -1 (0-126) */
+
+/*                             for i/o type = 0 and 1, bit 13 = 0      input */
+/*                                                     bit 13 = 1      output */
+
+/*                   SMITH    - bits 10-6 - function code (01-28) */
+/*                                                01 - skid density values */
+/*                                                02 - skid BS&W values */
+/*                                                03 - skid live values */
+/*                                                04 - meter live values */
+/*                                                26 - daily report - meter */
+/*                                                27 - daily report - skid */
+/*                              bits 5-2  - subset        (01-12) */
+/*                              bits 1-0  - meter no.-1   (0-3) */
+/*                   LOGITROL - bits 10   - table (0=output ,1=input) */
+/*                              bits 9-0  - address (0-1023 represents 1-1024) */
+
+/*                   ALLEN BRADLEY - data table word address */
+/*                                   0-377 octal */
+
+/*                   SQUARE D PLC bit 15 - 0 = register */
+/*                                         1 = status input */
+/*                                bit 12-0 address  (0 - 8191) */
+/*                                         (0 - 8191 represents 1 - 8192) */
+
+/*                   ASIC    - b'0000ccccctttaaaa' */
+/*                                       c - controller      (0-31) --> (1-32) */
+/*                                       t - data type */
+/*                                                0 - */
+/*                                                1 - input */
+/*                                                2 - status */
+/*                                                3 - level 0 SP's */
+/*                                                4 - level 1 SP's */
+/*                                                5 - level 2 SP's */
+/*                                                6 -   RAM   SP's */
+/*                                                7 - coefficients */
+/*                                       a - address         (0-15) --> (1-16) */
+
+/*                   GEM80   - Bits  9-5   - Block No. (0-31) */
+/*                             Bits  4-0   - Word No.  (0-29) */
+
+/*                   PLC720  - bits 11-0   - relay number */
+/*                                           bit 0 = 0 is external relay */
+/*                                           bit 0 = 1 is internal relay */
+
+/*                   HLAC    - address  0-1024 - bit values */
+/*                                              0- 63 lift status */
+/*                                             64-191 floor status */
+/*											  192-199 comm status */
+/*											  200-207 spare status bits */
+/*											  208-271 altenate floor map status */
+/*											  272-335 emergency power status */
+/*											  336-399 lift fire status */
+/*											  400-473 lift door status */
+/*											  464-527 lift start status */
+/*											  528-591 lift emergency stop status */
+/*											  592-655 lift ind srv status */
+/*											  656-719 lift alarm status */
+/*											  720-1023 spare */
+
+/*                                    1024-1280 - analog values */
+
+/*  TEXAS INSTRUMENTS 560/65 - bits 15-0  - address (1-8191) */
+
+/*                   EXCEL+  - bits 12-5  - point number (1-199) */
+/*                                   4-0  - item no. (1-28) */
+/*                   HPEP    - bits 12-5  - point number (1-255) */
+/*                                   4-0  - item no. (1-28) */
+/*                   CNI     - bits 14-7  - point number (1-255) */
+/*                                   6-0  - sub-device number (1-99) */
+
+/*                   CMC300  - bits  4-0  - parameter number (0-31) */
+
+
+/*                   ASEA PLC: rrrrr DISTS bb */
+/*                             rrrrr DIVAL */
+/*                             rrrrr DOSTS bb */
+/*                             rrrrr DOVAL */
+/*                             rrrrr AISTS bb */
+/*                             rrrrr AIVAL [R32 | U4095] */
+/*                             rrrrr AOSTS bb */
+/*                             rrrrr AOVAL [R32 | U4095] */
+/*                             rrrrr DAT   [    | R32  | U4095 | */
+/*                                          U16B| S16B | BIT bb] */
+
+/*                              where: */
+/*                                  rrrrr - record number (1 -32767) */
+/*                                  bb - bit number (1 - 12 or 32 for DAT) */
+
+/*                   DBscan  - bits 14-0  - word number (1-32767) */
+
+/*                   XL500   - address - pad entry */
+/*			      format  - point attribute (0-255) */
+
+/*                   Hitachi - bits 15-14 - address type */
+/*						0 - bit, 1-word, 2-dble */
+/*			      bits 13-0  - pseudo address (0-16k) */
+
+/*                   D1000   - address - group*42 + point - 1 */
+/*			      format  - grouptype*16 + pointtype */
+
+/*                   OMNI    - bits 15-0  - address */
+/*                                      (0-8191 represents 1-8192) */
+/*                                      1XXX - discrete registers */
+/*                                      3XXX & 13XXX - short integer */
+/*                                      5XXX & 15XXX - long integer */
+/*                                      7XXX & 17XXX - IEEEFP */
+/*                                      (use OFFSET to access upper addresses) */
+
+/*                   GE90    - RTU type 0   (OFFSET is NOT allowed) */
+/*                                  bits 13-0 - address */
+/*                                      RTU address   <==>   PLC address */
+/*                                         0 - 1535          %I  0 - 1535 */
+/*                                      1536 - 3071          %Q  0 - 1535 */
+/*                                      3072 - 4607          %M  0 - 1535 */
+/*                                      4608 - 4639          %T  0 -   31 */
+/*                                      4640 - 4655          %S  0 -   15 */
+/*                                      4656 - 4671          %SA 0 -   15 */
+/*                                      4672 - 4687          %SB 0 -   15 */
+/*                                      4688 - 4703          %SC 0 -   15 */
+/*                                      4704 - 5663          %G  0 -  959 */
+/*                                      5664 - 8191           (illegal) */
+/*                             RTU type 1   (use OFFSET to access upper addresses) */
+/*                                  bits 15-14 - offset (0,1,2 or 3) */
+/*                                  bits 13-0  - address */
+/*                                      RTU address   <==>   PLC address (offset=0) */
+/*                                         0 - 4196          %R  0 - 4195 */
+/*                                      4196 - 6143          %AI 0 - 2047 */
+/*                                      6144 - 8191          %AQ 0 - 2047 */
+
+/*                   UMAX    - address - pad entry */
+/*                             Micromax address in ASCII and HEX formats */
+
+
+/*                   Fieldbus- address - pad entry */
+/*                             Fieldbus address in "Blocktag.Param" format */
+
+/*                   Moore Mycro - address - pad entry */
+/*                                 Moore Mycro channel, parameter, tuning parameter */
+/*                                 type, command source and ASCII address */
+
+/*                   H7800   - address - pad entry */
+/*                             Point number and point name */
+
+/*                   SMS7    - address - pad entry */
+/*                             Point name - eqivalent to Siemens S7 variable name */
+/*								(ASCII) */
+
+/*                   Bailey Infi 90 - address - pad entry */
+/*                             Import points - Bailey loop/pcu/module/block number */
+/*                             Export points - Bailey export point index */
+
+/*                   Universal Modbus - */
+/*                            5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                           --------------------------------- */
+/*                           !A! B !    raw  address         ! */
+/*                           --------------------------------- */
+
+/*                           A - Unused (HXR file is only 32K) */
+/*                           B - Address type */
+/*                             - 0 = digital output */
+/*                             - 1 = digital input */
+/*                             - 2 = 3X address */
+/*                             - 3 = 4X address */
+
+/*                   Universal Modbus single-table - */
+/*                            5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                           --------------------------------- */
+/*                           !A!        raw  address         ! */
+/*                           --------------------------------- */
+
+/*                           A - Unused (HXR file is only 32K) */
+
+/*                   Moore APACS - address - pad entry */
+/*                             DataTag name (ASCII) in APACS format */
+
+/*                   Bristol Babcock OpenBSI - address - pad entry */
+/*                             Signal or Array point details */
+
+/*                   DNP3    - address - pad entry */
+/*                             DNP Object Type, Variation & Address */
+
+
+#endif	

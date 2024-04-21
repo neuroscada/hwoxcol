@@ -1,0 +1,910 @@
+
+#if	!defined(DATSZ)
+
+/*                             DAT000 - point DATA file */
+/*                             ------------------------ */
+
+/*     REVISION: */
+/*         @(#)dat000_def	main.SVR_MASTERPROJ_Integration.R0930_Int.2 */
+
+/*     PRMDEF: */
+/*         PRMDEF are used to describe all the fields in a point record. */
+/*         PRMDEF are used by the dictionary and by code. */
+/*         points_def (via points.h) contains macros to be used by C programs. */
+/*         SEP converter handles Fortran macros $word, $bit, etc. */
+/*         points_def also contains functions for use by Fortran to operate on PRMDEF. */
+/*     SEE: points_def for description of PRMDEF and $predefa() and $prmdefb() */
+
+/*     NOTES: */
+/*   1) Reals and integer*4s must start on words 1,3,5 etc. */
+/*   2) Doubles must start on 1,5,9 etc. */
+/*   3) Sizes must be multiple of 4 to maintain 64 bit alignment. */
+/*   4) Certain bits in the "flags" and "auth" fields in the CDA and ASH point structure */
+/*      are replicated to the Console Stations and the replication of these fields is */
+/*      controlled by the bit masks (POINTFLAGS_CONFIGMASK and POINTAUTH_CONFIGMASK). If */
+/*      you intend to change these fields, please determine whether the information needs */
+/*      to be replicated to the Console Station. If necessary, you will need to update */
+/*      the bit masks. */
+
+
+#define	DATSZ	88 /*  biggest of the folowing sizes */
+#define	DATSZ_STA	68
+#define	DATSZ_ANA	88
+#define	DATSZ_ACC	80
+#define	DATSZ_ACS	16
+#define	DATSZ_CDA	12
+#define	DATSZ_ASH	12
+
+
+#define	POINTFLAGS_CONFIGMASK	0xC000	 /*   field mask for the "flags" field */
+#define	POINTAUTH_CONFIGMASK	0x0002	  /*   field mask for the control authorized flag */
+
+#if	!defined(USE_DERIVED_TYPE)
+/*       integer(2) DATBUF(DATSZ) */
+#endif	
+
+
+/*         STATUS point */
+
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                          1 !A!B!C!D!E!F!G!H!I!J!K!L!   M   ! */
+/*                            --------------------------------- */
+/*                          2 !       Ni      !O!P!Q!R!S!T!U!V! */
+/*                            --------------------------------- */
+/*                          3 !       Wi      !      Xi       ! */
+/*                            --------------------------------- */
+/*                          4 ! Area number                   ! */
+/*                            --------------------------------- */
+/*                        5-6 ! Create time                   ! */
+/*                            --------------------------------- */
+/*                          7 ! Ow! Pw!  op   !  pv   ! mode  ! */
+/*                            --------------------------------- */
+/*                          8 !      alarm states map         ! */
+/*                            --------------------------------- */
+/*                       9-10 ! last time PV processed (secs) ! */
+/*                            --------------------------------- */
+/*                         11 ! last day PV processed         ! */
+/*                            --------------------------------- */
+/*                         12 !    REQERRi    !    REVERSEi   ! */
+/*                            --------------------------------- */
+/*                         13 !I!-! General Alarm ON delay    ! 0-16383 seconds */
+/*                            --------------------------------- */
+/*                         14 !I!-! State 0 Alarm ON delay    ! I = in delay */
+/*                            --------------------------------- */
+/*                         15 !I!-! State 1 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         16 !I!-! State 2 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         17 !I!-! State 3 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         18 !I!-! State 4 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         19 !I!-! State 5 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         20 !I!-! State 6 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         21 !I!-! State 7 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         22 !I!-! General Alarm OFF delay   ! 0-16383 seconds */
+/*                            --------------------------------- */
+/*                         23 !I!-! State 0 Alarm OFF delay   ! I = in delay */
+/*                            --------------------------------- */
+/*                         24 !I!-! State 1 Alarm OFF delay   ! */
+/*                            --------------------------------- */
+/*                         25 !I!-! State 2 Alarm OFF delay   ! */
+/*                            --------------------------------- */
+/*                         26 !I!-! State 3 Alarm OFF delay   ! */
+/*                            --------------------------------- */
+/*                         27 !I!-! State 4 Alarm OFF delay   ! */
+/*                            --------------------------------- */
+/*                         28 !I!-! State 5 Alarm OFF delay   ! */
+/*                            --------------------------------- */
+/*                         29 !I!-! State 6 Alarm OFF delay   ! */
+/*                            --------------------------------- */
+/*                         30 !I!-! State 7 Alarm OFF delay   ! */
+/*                            --------------------------------- P - composite PV */
+/*                         31 !-!O!M!P! revOP ! revMD ! revPV ! M - composite MD */
+/*                            --------------------------------- O - composite OP */
+/*                         32 ! dyn scn flags !       -       ! */
+/*                            --------------------------------- */
+/*                         33 !  MD Quality   !  PV Quality   ! */
+/*                            --------------------------------- */
+/*                         34 !  SP Quality   !  OP Quality   ! */
+/*                            --------------------------------- */
+/*                         35 !  A2 Quality   !  A1 Quality   ! */
+/*                            --------------------------------- */
+/*                         36 !  A4 Quality   !  A3 Quality   ! */
+/*                            --------------------------------- */
+/*                      37-40 !  PV scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      41-44 !  MD scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      45-48 !  OP scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      49-52 !  SP scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      53-56 !  A1 scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      57-60 !  A2 scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      61-64 !  A3 scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      65-68 !  A4 scanned timestamp         ! */
+/*                            --------------------------------- */
+
+
+typedef struct
+    {
+    uint2 flags;          //  1 flags (as above)
+    uint2 auth;           //  2 control authorised flags
+    uint2 error;          //  3 error flags
+    uint2 area;           //  4 area number
+    uint4 createtime;     //  5 create time (C time)
+    uint2 mode;           //  7 PV, OP, and mode
+    uint2 alarms;         //  8 alarm states map
+    float timelp;         //  9 time last processed (second in day)
+    uint2 datelp;         // 11 date last processed (day)
+    uint2 req_rev;        // 12 request error and reverse
+    uint2 genOnDelay;     // 13 General alarm on delay (seconds)
+    uint2 st0OnDelay;     // 14 State 0 alarm on delay (seconds)
+    uint2 st1OnDelay;     // 15 State 1 alarm on delay (seconds)
+    uint2 st2OnDelay;     // 16 State 2 alarm on delay (seconds)
+    uint2 st3OnDelay;     // 17 State 3 alarm on delay (seconds)
+    uint2 st4OnDelay;     // 18 State 4 alarm on delay (seconds)
+    uint2 st5OnDelay;     // 19 State 5 alarm on delay (seconds)
+    uint2 st6OnDelay;     // 20 State 6 alarm on delay (seconds)
+    uint2 st7OnDelay;     // 21 State 7 alarm on delay (seconds)
+    uint2 genOffDelay;    // 22 General alarm off delay (seconds)
+    uint2 st0OffDelay;    // 23 State 0 alarm off delay (seconds)
+    uint2 st1OffDelay;    // 24 State 1 alarm off delay (seconds)
+    uint2 st2OffDelay;    // 25 State 2 alarm off delay (seconds)
+    uint2 st3OffDelay;    // 26 State 3 alarm off delay (seconds)
+    uint2 st4OffDelay;    // 27 State 4 alarm off delay (seconds)
+    uint2 st5OffDelay;    // 28 State 5 alarm off delay (seconds)
+    uint2 st6OffDelay;    // 29 State 6 alarm off delay (seconds)
+    uint2 st7OffDelay;    // 30 State 7 alarm off delay (seconds)
+    uint2 revmasks;       // 31 reverse masks
+    uint2 flags2;         // 32 dynamic scanning disabled flags
+    uint2 quality[4];     // 33 parameter quality
+    HSCTIME paramtimes[8];// 37 parameter scanned timestamp
+    } STA_DAT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(STA_DAT) <= (DATSZ * sizeof(int2)), "STA_DAT struct is too large for DATSZ");
+	static_assert(sizeof(STA_DAT) == (DATSZ_STA * sizeof(int2)), "STA_DAT struct is different size to DATSZ_STA");
+#endif
+
+
+
+#define	IMPLEM	PRMDEF_MAKEB(0,1,15,1) /*  A - point implemented */
+#define	ONSCAN	PRMDEF_MAKEB(0,1,14,1) /*  B - point on scan */
+#define	PRINIT	PRMDEF_MAKEB(0,1,13,1) /*  C - point record initializing */
+#define	ALMUNA	PRMDEF_MAKEB(0,1,12,1) /*  D - point alarm unacknowledged */
+#define	PRINH	PRMDEF_MAKEB(0,1,11,1) /*  E - point alarming inhibited */
+#define	APRINH	PRMDEF_MAKEB(0,1,10,1) /*  F - point alarm processing inhibited */
+/*                                                                0 - alarm determined by point processor */
+/*                                                                1 - alarm determined by application */
+/*     PRMDEF,parameter::             = $prmdefb(0,1, 9,1) ;* G - */
+#define	TRNSIT	PRMDEF_MAKEB(0,1, 8,1) /*  H - alarm transitions between alarm states. */
+/*     PRMDEF,parameter::             = $prmdefb(0,1, 7,1) ;* I - */
+/*     PRMDEF,parameter::             = $prmdefb(0,1, 6,1) ;* J - */
+#define	CLMP	PRMDEF_MAKEB(0,1, 5,1) /*  K - clamp pv at 0 & 100 % */
+#define	USEBSP	PRMDEF_MAKEB(0,1, 4,1) /*  L - use Bias and Scale */
+#define	PRALM	PRMDEF_MAKEB(0,1, 0,4) /*  M - point alarm state */
+#define	NOALM	0          /*      no alarm */
+/*                                                STATUS point alarms */
+#define	STAALM	1          /*      alarm */
+#define	STACHG	2          /*      change */
+/*                                                ANALOG + ACCUML point alarms */
+#define	RATE	1          /*      rate */
+#define	DVLO	2          /*      deviation low */
+#define	DVHI	3          /*      deviation high */
+#define	XTLO	4          /*      PV transmitter low */
+#define	XTHI	5          /*      PV transmitter high */
+#define	PVLO	6          /*      PV low */
+#define	PVHI	7          /*      PV high */
+#define	PVLOLO	8          /*      PV low low */
+#define	PVHIHI	9          /*      PV high high */
+#define	RSLO	10         /*      PV unreasonably low */
+#define	RSHI	11         /*      PV unreasonably high */
+#define	USRALM	12         /*      user alarm 1 */
+/*     integer,parameter::            USRALM  = 13         ;*     user alarm 2 */
+/*     integer,parameter::            USRALM  = 14         ;*     user alarm 3 */
+/*     integer,parameter::            USRALM  = 15         ;*     user alarm 4 */
+#define	CNTAUT	PRMDEF_MAKEB(0,2, 8,8) /*  N - control authorised for */
+#define	PVAUT	PRMDEF_MAKEB(0,2, 8,1) /*      parameter. */
+#define	MDAUT	PRMDEF_MAKEB(0,2, 9,1) /*      Set during control. */
+#define	OPAUT	PRMDEF_MAKEB(0,2,10,1) /*  */
+#define	SPAUT	PRMDEF_MAKEB(0,2,11,1) /*  */
+#define	A1AUT	PRMDEF_MAKEB(0,2,12,1) /*  */
+#define	A2AUT	PRMDEF_MAKEB(0,2,13,1) /*  */
+#define	A3AUT	PRMDEF_MAKEB(0,2,14,1) /*  */
+#define	A4AUT	PRMDEF_MAKEB(0,2,15,1) /*  */
+#define	FIREPT	PRMDEF_MAKEB(0,2, 7,1) /*  O - Fire point */
+#define	PNT_NOJNL	PRMDEF_MAKEB(0,2, 6,1) /*  P - suppress journal of alarm */
+#define	ALM_OVERFLOW	PRMDEF_MAKEB(0,2, 5,1) /*  Q - Alarm overflow on point */
+/*     PRMDEF,parameter::             = $prmdefb(0,2, 4,1) ;* R - */
+/*     PRMDEF,parameter::             = $prmdefb(0,2, 3,1) ;* S - */
+#define	DAT_PNTACKTR	PRMDEF_MAKEB(0,2, 2,1) /*  T - Point transitioned from unacked to acked */
+#define	DAT_PNTBUILT	PRMDEF_MAKEB(0,2, 1,1) /*  U - Point was built (1) not discovered (0) */
+#define	DAT_QUESTIONABLE	PRMDEF_MAKEB(0,2, 0,1) /*  V - Point is questionable */
+#define	XCHG	PRMDEF_MAKEB(0,3, 8,8) /*  w - external change not permitted. */
+#define	XPVCHG	PRMDEF_MAKEB(0,3, 8,1) /*      Set if no external changes */
+#define	XMDCHG	PRMDEF_MAKEB(0,3, 9,1) /*      are permitted. */
+#define	XOPCHG	PRMDEF_MAKEB(0,3,10,1) /*  */
+#define	XSPCHG	PRMDEF_MAKEB(0,3,11,1) /*  */
+#define	XA1CHG	PRMDEF_MAKEB(0,3,12,1) /*  */
+#define	XA2CHG	PRMDEF_MAKEB(0,3,13,1) /*  */
+#define	XA3CHG	PRMDEF_MAKEB(0,3,14,1) /*  */
+#define	XA4CHG	PRMDEF_MAKEB(0,3,15,1) /*  */
+#define	INEROR	PRMDEF_MAKEB(0,3, 0,8) /*  x - parameter in error. */
+#define	PVERR	PRMDEF_MAKEB(0,3, 0,1) /*      Set while data is */
+#define	MDERR	PRMDEF_MAKEB(0,3, 1,1) /*      questionable */
+#define	OPERR	PRMDEF_MAKEB(0,3, 2,1) /*  */
+#define	SPERR	PRMDEF_MAKEB(0,3, 3,1) /*  */
+#define	A1ERR	PRMDEF_MAKEB(0,3, 4,1) /*  */
+#define	A2ERR	PRMDEF_MAKEB(0,3, 5,1) /*  */
+#define	A3ERR	PRMDEF_MAKEB(0,3, 6,1) /*  */
+#define	A4ERR	PRMDEF_MAKEB(0,3, 7,1) /*  */
+#define	PRACD	PRMDEF_MAKEB(0,4,0,16) /*      area number */
+#define	PRCTM	PRMDEF_MAKEB(0,5,0, 0) /*      create time */
+#define	MDSTA	PRMDEF_MAKEB(0,7, 0,4) /*      Mode state */
+#define	PVSTA	PRMDEF_MAKEB(0,7, 4,4) /*      PV state */
+#define	PVBIT0	PRMDEF_MAKEB(0,7, 4,1) /*         bit 0 */
+#define	PVBIT1	PRMDEF_MAKEB(0,7, 5,1) /*         bit 1 */
+#define	PVBIT2	PRMDEF_MAKEB(0,7, 6,1) /*         bit 2 */
+#define	OPSTA	PRMDEF_MAKEB(0,7, 8,4) /*      OP state */
+#define	OPBIT0	PRMDEF_MAKEB(0,7, 8,1) /*         bit 0 */
+#define	OPBIT1	PRMDEF_MAKEB(0,7, 9,1) /*         bit 1 */
+#define	OPWD	PRMDEF_MAKEB(0,7,14,2) /*  Ow- OP width (0-1) */
+#define	PVWD	PRMDEF_MAKEB(0,7,12,2) /*  Pw- PV width (0-2) */
+/*                                                       0 - 1 bit */
+/*                                                       1 - 2 bit */
+/*                                                       2 - 3 bit */
+/*                                                       3 - 4 bit */
+#define	ALMMAP	PRMDEF_MAKEB(0, 8,0,16) /*      Alarm state maps */
+/*       - for Status Points, the lower 8 bits represent the states */
+/*         which are Alarm States, and the upper 8 bits represent the */
+/*         states which are currently in Alarm. */
+/*       - for Analog/Accum. points, each bit represents a point alarm state. */
+#define	INALMMAP	PRMDEF_MAKEB(0, 8, 8,8) /*      Alarm state maps for in alarm flags */
+/*                                                            ;*     ie upper 8 bits of ALMMAP */
+#define	ALMMAP0	PRMDEF_MAKEB(0, 8, 0,1) /*     Alarm state map bit 0 */
+#define	ALMMAP1	PRMDEF_MAKEB(0, 8, 1,1) /*     Alarm state map bit 1 */
+#define	ALMMAP2	PRMDEF_MAKEB(0, 8, 2,1) /*     Alarm state map bit 2 */
+#define	ALMMAP3	PRMDEF_MAKEB(0, 8, 3,1) /*     Alarm state map bit 3 */
+#define	ALMMAP4	PRMDEF_MAKEB(0, 8, 4,1) /*     Alarm state map bit 4 */
+#define	ALMMAP5	PRMDEF_MAKEB(0, 8, 5,1) /*     Alarm state map bit 5 */
+#define	ALMMAP6	PRMDEF_MAKEB(0, 8, 6,1) /*     Alarm state map bit 6 */
+#define	ALMMAP7	PRMDEF_MAKEB(0, 8, 7,1) /*     Alarm state map bit 7 */
+#define	ALMMAP8	PRMDEF_MAKEB(0, 8, 8,1) /*     Alarm state map bit 8 */
+#define	ALMMAP9	PRMDEF_MAKEB(0, 8, 9,1) /*     Alarm state map bit 9 */
+#define	ALMMAP10	PRMDEF_MAKEB(0, 8,10,1) /*     Alarm state map bit 10 */
+#define	ALMMAP11	PRMDEF_MAKEB(0, 8,11,1) /*     Alarm state map bit 11 */
+#define	ALMMAP12	PRMDEF_MAKEB(0, 8,12,1) /*     Alarm state map bit 12 */
+#define	ALMMAP13	PRMDEF_MAKEB(0, 8,13,1) /*     Alarm state map bit 13 */
+#define	ALMMAP14	PRMDEF_MAKEB(0, 8,14,1) /*     Alarm state map bit 14 */
+#define	ALMMAP15	PRMDEF_MAKEB(0, 8,15,1) /*     Alarm state map bit 15 */
+
+#define	PVSECP	PRMDEF_MAKEB(0, 9,0, 0) /*  last time PV processed */
+#define	PVDAYP	PRMDEF_MAKEB(0,11,0,16) /*  last date PV processed */
+
+#define	PVREV	PRMDEF_MAKEB(0,12, 0,1) /*  reverse PV */
+#define	MDREV	PRMDEF_MAKEB(0,12, 1,1) /*  reverse MD */
+#define	OPREV	PRMDEF_MAKEB(0,12, 2,1) /*  reverse OP */
+#define	SPREV	PRMDEF_MAKEB(0,12, 3,1) /*  reverse SP */
+#define	A1REV	PRMDEF_MAKEB(0,12, 4,1) /*  reverse A1 */
+#define	A2REV	PRMDEF_MAKEB(0,12, 5,1) /*  reverse A2 */
+#define	A3REV	PRMDEF_MAKEB(0,12, 6,1) /*  reverse A3 */
+#define	A4REV	PRMDEF_MAKEB(0,12, 7,1) /*  reverse A4 */
+#define	REQPVERR	PRMDEF_MAKEB(0,12, 8,1) /*  request PV error */
+#define	REQMDERR	PRMDEF_MAKEB(0,12, 9,1) /*  request MD error */
+#define	REQOPERR	PRMDEF_MAKEB(0,12,10,1) /*  request OP error */
+#define	REQSPERR	PRMDEF_MAKEB(0,12,11,1) /*  request SP error */
+#define	REQA1ERR	PRMDEF_MAKEB(0,12,12,1) /*  request A1 error */
+#define	REQA2ERR	PRMDEF_MAKEB(0,12,13,1) /*  request A2 error */
+#define	REQA3ERR	PRMDEF_MAKEB(0,12,14,1) /*  request A3 error */
+#define	REQA4ERR	PRMDEF_MAKEB(0,12,15,1) /*  request A4 error */
+#define	GALONDLY	PRMDEF_MAKEB(0,13,0,14) /*  general alarm delay */
+#define	AL1ONDLY	PRMDEF_MAKEB(0,14,0,14) /*  state 0 alarm delay */
+#define	AL2ONDLY	PRMDEF_MAKEB(0,15,0,14) /*  state 1 alarm delay */
+#define	AL3ONDLY	PRMDEF_MAKEB(0,16,0,14) /*  state 2 alarm delay */
+#define	AL4ONDLY	PRMDEF_MAKEB(0,17,0,14) /*  state 3 alarm delay */
+#define	AL5ONDLY	PRMDEF_MAKEB(0,18,0,14) /*  state 4 alarm delay */
+#define	AL6ONDLY	PRMDEF_MAKEB(0,19,0,14) /*  state 5 alarm delay */
+#define	AL7ONDLY	PRMDEF_MAKEB(0,20,0,14) /*  state 6 alarm delay */
+#define	AL8ONDLY	PRMDEF_MAKEB(0,21,0,14) /*  state 7 alarm delay */
+#define	GALOFFDLY	PRMDEF_MAKEB(0,22,0,14) /*  general alarm delay */
+#define	AL1OFFDLY	PRMDEF_MAKEB(0,23,0,14) /*  state 0 alarm delay */
+#define	AL2OFFDLY	PRMDEF_MAKEB(0,24,0,14) /*  state 1 alarm delay */
+#define	AL3OFFDLY	PRMDEF_MAKEB(0,25,0,14) /*  state 2 alarm delay */
+#define	AL4OFFDLY	PRMDEF_MAKEB(0,26,0,14) /*  state 3 alarm delay */
+#define	AL5OFFDLY	PRMDEF_MAKEB(0,27,0,14) /*  state 4 alarm delay */
+#define	AL6OFFDLY	PRMDEF_MAKEB(0,28,0,14) /*  state 5 alarm delay */
+#define	AL7OFFDLY	PRMDEF_MAKEB(0,29,0,14) /*  state 6 alarm delay */
+#define	AL8OFFDLY	PRMDEF_MAKEB(0,30,0,14) /*  state 7 alarm delay */
+#define	INGALONDLY	PRMDEF_MAKEB(0,13,15,1) /*  general alarm delay */
+#define	INAL1ONDLY	PRMDEF_MAKEB(0,14,15,1) /*  state 0 alarm delay */
+#define	INAL2ONDLY	PRMDEF_MAKEB(0,15,15,1) /*  state 1 alarm delay */
+#define	INAL3ONDLY	PRMDEF_MAKEB(0,16,15,1) /*  state 2 alarm delay */
+#define	INAL4ONDLY	PRMDEF_MAKEB(0,17,15,1) /*  state 3 alarm delay */
+#define	INAL5ONDLY	PRMDEF_MAKEB(0,18,15,1) /*  state 4 alarm delay */
+#define	INAL6ONDLY	PRMDEF_MAKEB(0,19,15,1) /*  state 5 alarm delay */
+#define	INAL7ONDLY	PRMDEF_MAKEB(0,20,15,1) /*  state 6 alarm delay */
+#define	INAL8ONDLY	PRMDEF_MAKEB(0,21,15,1) /*  state 7 alarm delay */
+#define	INGALOFFDLY	PRMDEF_MAKEB(0,22,15,1) /*  general alarm delay */
+#define	INAL1OFFDLY	PRMDEF_MAKEB(0,23,15,1) /*  state 0 alarm delay */
+#define	INAL2OFFDLY	PRMDEF_MAKEB(0,24,15,1) /*  state 1 alarm delay */
+#define	INAL3OFFDLY	PRMDEF_MAKEB(0,25,15,1) /*  state 2 alarm delay */
+#define	INAL4OFFDLY	PRMDEF_MAKEB(0,26,15,1) /*  state 3 alarm delay */
+#define	INAL5OFFDLY	PRMDEF_MAKEB(0,27,15,1) /*  state 4 alarm delay */
+#define	INAL6OFFDLY	PRMDEF_MAKEB(0,28,15,1) /*  state 5 alarm delay */
+#define	INAL7OFFDLY	PRMDEF_MAKEB(0,29,15,1) /*  state 6 alarm delay */
+#define	INAL8OFFDLY	PRMDEF_MAKEB(0,30,15,1) /*  state 7 alarm delay */
+#define	PVREVMAP	PRMDEF_MAKEB(0,31, 0,4) /*  reverse PV mask (which bits to reverse) */
+#define	PVREVMAP0	PRMDEF_MAKEB(0,31, 0,1) /*  reverse PV mask bit 0 */
+#define	PVREVMAP1	PRMDEF_MAKEB(0,31, 1,1) /*  reverse PV mask bit 1 */
+#define	PVREVMAP2	PRMDEF_MAKEB(0,31, 2,1) /*  reverse PV mask bit 2 */
+#define	PVREVMAP3	PRMDEF_MAKEB(0,31, 3,1) /*  reverse PV mask bit 3 */
+#define	MDREVMAP	PRMDEF_MAKEB(0,31, 4,4) /*  reverse MD mask (which bits to reverse) */
+#define	MDREVMAP0	PRMDEF_MAKEB(0,31, 4,1) /*  reverse MD mask bit 0 */
+#define	MDREVMAP1	PRMDEF_MAKEB(0,31, 5,1) /*  reverse MD mask bit 1 */
+#define	MDREVMAP2	PRMDEF_MAKEB(0,31, 6,1) /*  reverse MD mask bit 2 */
+#define	MDREVMAP3	PRMDEF_MAKEB(0,31, 7,1) /*  reverse MD mask bit 3 */
+#define	OPREVMAP	PRMDEF_MAKEB(0,31, 8,4) /*  reverse OP mask (which bits to reverse) */
+#define	OPREVMAP0	PRMDEF_MAKEB(0,31, 8,1) /*  reverse OP mask bit 0 */
+#define	OPREVMAP1	PRMDEF_MAKEB(0,31, 9,1) /*  reverse OP mask bit 1 */
+#define	OPREVMAP2	PRMDEF_MAKEB(0,31,10,1) /*  reverse OP mask bit 2 */
+#define	OPREVMAP3	PRMDEF_MAKEB(0,31,11,1) /*  reverse OP mask bit 3 */
+#define	PVCOMP	PRMDEF_MAKEB(0,31,12,1) /*  PV has multiple sources */
+#define	MDCOMP	PRMDEF_MAKEB(0,31,13,1) /*  MD has multiple sources */
+#define	OPCOMP	PRMDEF_MAKEB(0,31,14,1) /*  OP has multiple sources */
+#define	PVDYNSCNDS	PRMDEF_MAKEB(0,32, 8,1) /*  PV dynamic scanning disable flag */
+#define	MDDYNSCNDS	PRMDEF_MAKEB(0,32, 9,1) /*  MD dynamic scanning disable flag */
+#define	OPDYNSCNDS	PRMDEF_MAKEB(0,32,10,1) /*  OP dynamic scanning disable flag */
+#define	SPDYNSCNDS	PRMDEF_MAKEB(0,32,11,1) /*  SP dynamic scanning disable flag */
+#define	A1DYNSCNDS	PRMDEF_MAKEB(0,32,12,1) /*  A1 dynamic scanning disable flag */
+#define	A2DYNSCNDS	PRMDEF_MAKEB(0,32,13,1) /*  A2 dynamic scanning disable flag */
+#define	A3DYNSCNDS	PRMDEF_MAKEB(0,32,14,1) /*  A3 dynamic scanning disable flag */
+#define	A4DYNSCNDS	PRMDEF_MAKEB(0,32,15,1) /*  A4 dynamic scanning disable flag */
+#define	PVQUAL	PRMDEF_MAKEB(0,33, 0,8) /*  PV quality */
+#define	MDQUAL	PRMDEF_MAKEB(0,33, 8,8) /*  MD quality */
+#define	OPQUAL	PRMDEF_MAKEB(0,34, 0,8) /*  OP quality */
+#define	SPQUAL	PRMDEF_MAKEB(0,34, 8,8) /*  SP quality */
+#define	A1QUAL	PRMDEF_MAKEB(0,35, 0,8) /*  A1 quality */
+#define	A2QUAL	PRMDEF_MAKEB(0,35, 8,8) /*  A2 quality */
+#define	A3QUAL	PRMDEF_MAKEB(0,36, 0,8) /*  A3 quality */
+#define	A4QUAL	PRMDEF_MAKEB(0,36, 8,8) /*  A4 quality */
+#define	PVTIME	PRMDEF_MAKEB(0,37, 0,0) /*  PV timestamp */
+#define	MDTIME	PRMDEF_MAKEB(0,41, 0,0) /*  MD timestamp */
+#define	OPTIME	PRMDEF_MAKEB(0,45, 0,0) /*  OP timestamp */
+#define	SPTIME	PRMDEF_MAKEB(0,49, 0,0) /*  SP timestamp */
+#define	A1TIME	PRMDEF_MAKEB(0,53, 0,0) /*  A1 timestamp */
+#define	A2TIME	PRMDEF_MAKEB(0,57, 0,0) /*  A2 timestamp */
+#define	A3TIME	PRMDEF_MAKEB(0,61, 0,0) /*  A3 timestamp */
+#define	A4TIME	PRMDEF_MAKEB(0,65, 0,0) /*  A4 timestamp */
+
+#if	!defined(USE_DERIVED_TYPE)
+/*       real          PVSECV */
+/*       integer(2)     PVDAYV */
+/*       equivalence ( PVSECV, $buf(PVSECP) ) */
+/*       equivalence ( PVDAYV, $buf(PVDAYP) ) */
+/*       integer(1)    AXQUAL(4) */
+/*       equivalence ( AXQUAL, $buf(A1QUAL) ) */
+#endif	
+
+
+/*         ANALOG point */
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                          1 !A!B!C!D!E!F!G!H!I!J!K!L!   M   ! */
+/*                            --------------------------------- */
+/*                          2 !       Ni      !O!P!Q!R!S!T!U!V! */
+/*                            --------------------------------- */
+/*                          3 !       Wi      !      Xi       ! */
+/*                            --------------------------------- */
+/*                          4 ! Area number                   ! */
+/*                            --------------------------------- */
+/*                        5-6 ! Create time                   ! */
+/*                             --------------------------------- */
+/*                          7 !   Dd  !   Ad  !   Cd  ! mode  ! */
+/*                            --------------------------------- */
+/*                          8 !      Alarm state map          ! */
+/*                            --------------------------------- */
+/*                       9-10 ! last time PV processed (secs) ! */
+/*                            --------------------------------- */
+/*                         11 ! last day PV processed         ! */
+/*                            --------------------------------- */
+/*                         12 !    REQERRi    !    REVERSEi   ! */
+/*                            --------------------------------- */
+/*                         13 !I!-! General Alarm ON delay    ! 0-16383 seconds */
+/*                            --------------------------------- */
+/*                         14 !I!-! Limit 1 Alarm ON delay    ! I = in delay */
+/*                            --------------------------------- */
+/*                         15 !I!-! Limit 2 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         16 !I!-! Limit 3 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         17 !I!-! Limit 4 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         18 !I!-! Limit 5 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         19 !I!-! Limit 6 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         20 !I!-! Limit 7 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         21 !I!-! Limit 8 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         22 !I!-! General Alarm OFF delay   ! 0-16383 seconds */
+/*                            --------------------------------- */
+/*                         23 !I!-! Limit 1 Alarm OFF delay   ! I = in delay */
+/*                            --------------------------------- */
+/*                         24 !I!-! Limit 2 Alarm OFF delay   ! */
+/*                            --------------------------------- */
+/*                         25 !I!-! Limit 3 Alarm OFF delay   ! */
+/*                            --------------------------------- */
+/*                         26 !I!-! Limit 4 Alarm OFF delay   ! */
+/*                            --------------------------------- */
+/*                         27 !I!-! Limit 5 Alarm OFF delay   ! */
+/*                            --------------------------------- */
+/*                         28 !I!-! Limit 6 Alarm OFF delay   ! */
+/*                            --------------------------------- */
+/*                         29 !I!-! Limit 7 Alarm OFF delay   ! */
+/*                            --------------------------------- */
+/*                         30 !I!-! Limit 8 Alarm OFF delay   ! */
+/*                            --------------------------------- */
+/*                         31 !-!x!M!x! resved! revMD ! resved! reverse maps */
+/*                            --------------------------------- M - composite MD */
+/*                         32 ! dyn scn flags !       -       ! */
+/*                            --------------------------------- */
+/*                         33 !  MD Quality   !  PV Quality   ! */
+/*                            --------------------------------- */
+/*                         34 !  SP Quality   !  OP Quality   ! */
+/*                            --------------------------------- */
+/*                         35 !  A2 Quality   !  A1 Quality   ! */
+/*                            --------------------------------- */
+/*                         36 !  A4 Quality   !  A3 Quality   ! */
+/*                            --------------------------------- */
+/*                      37-40 !  PV scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      41-44 !  MD scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      45-48 !  OP scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      49-52 !  SP scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      53-56 !  A1 scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      57-60 !  A2 scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      61-64 !  A3 scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      65-68 !  A4 scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      69-72 !              pv (eu)          ! */
+/*                            --------------------------------- */
+/*                      73-76 !            100% (eu)          ! */
+/*                            --------------------------------- */
+/*                      77-80 !              0% (eu)          ! */
+/*                            --------------------------------- */
+/*                      81-84 !            Bias               ! */
+/*                            --------------------------------- */
+/*                      85-88 !           Scale               ! */
+/*                            --------------------------------- */
+
+
+typedef struct
+    {
+    uint2 flags;          //  1 flags (as above)
+    uint2 auth;           //  2 control authorised flags
+    uint2 error;          //  3 error flags
+    uint2 area;           //  4 area number
+    uint4 createtime;     //  5 create time (C time)
+    uint2 mode;           //  7 deadmabds and mode
+    uint2 alarms;         //  8 alarm states map
+    float timelp;         //  9 time last processed (sec)
+    uint2 datelp;         // 11 date last processed (day)
+    uint2 req_rev;        // 12 request error and reverse
+    uint2 genOnDelay;     // 13 General alarm on delay (seconds)
+    uint2 al1OnDelay;     // 14 Limit 0 alarm on delay (seconds)
+    uint2 al2OnDelay;     // 15 Limit 1 alarm on delay (seconds)
+    uint2 al3OnDelay;     // 16 Limit 2 alarm on delay (seconds)
+    uint2 al4OnDelay;     // 17 Limit 3 alarm on delay (seconds)
+    uint2 al5OnDelay;     // 18 Limit 4 alarm on delay (seconds)
+    uint2 al6OnDelay;     // 19 Limit 5 alarm on delay (seconds)
+    uint2 al7OnDelay;     // 20 Limit 6 alarm on delay (seconds)
+    uint2 al8OnDelay;     // 21 Limit 7 alarm on delay (seconds)
+    uint2 genOffDelay;    // 22 General alarm off delay (seconds)
+    uint2 al1OffDelay;    // 23 Limit 0 alarm off delay (seconds)
+    uint2 al2OffDelay;    // 24 Limit 1 alarm off delay (seconds)
+    uint2 al3OffDelay;    // 25 Limit 2 alarm off delay (seconds)
+    uint2 al4OffDelay;    // 26 Limit 3 alarm off delay (seconds)
+    uint2 al5OffDelay;    // 27 Limit 4 alarm off delay (seconds)
+    uint2 al6OffDelay;    // 28 Limit 5 alarm off delay (seconds)
+    uint2 al7OffDelay;    // 29 Limit 6 alarm off delay (seconds)
+    uint2 al8OffDelay;    // 30 Limit 7 alarm off delay (seconds)
+    uint2 revmasks;       // 31 reverse masks
+    uint2 flags2;         // 32 dynamic scanning disabled flags
+    uint2 quality[4];     // 33 parameter quality
+    HSCTIME paramtimes[8];// 37 parameter scanned timestamp
+    double pv;            // 69  PV  (eu)
+    double euhi;          // 73 100% (eu)
+    double eulo;          // 77   0% (eu)
+    double bias;          // 81 PV = field*scale + bias
+    double scale;         // 85
+    } ANA_DAT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(ANA_DAT) <= (DATSZ * sizeof(int2)), "ANA_DAT struct is too large for DATSZ");
+	static_assert(sizeof(ANA_DAT) == (DATSZ_ANA * sizeof(int2)), "ANA_DAT struct is different size to DATSZ_ANA");
+#endif
+
+
+
+/*     Inherits a lot of STA parameter definitions, these are additional. */
+
+#define	DDBP	PRMDEF_MAKEB(0, 7,12,4) /*  Dd- drift deadband index (0-15) */
+#define	ADBP	PRMDEF_MAKEB(0, 7, 8,4) /*  Ad- alarm deadband index (0-15) */
+#define	CDBP	PRMDEF_MAKEB(0, 7, 4,4) /*  Cd- control deadband index (0-15) */
+
+#define	PVP	PRMDEF_MAKEB(0,69, 0,0) /*      process value */
+#define	EUHIP	PRMDEF_MAKEB(0,73, 0,0) /*      engineering units high */
+#define	EULOP	PRMDEF_MAKEB(0,77, 0,0) /*      engineering units low */
+#define	BIASP	PRMDEF_MAKEB(0,81 ,0,0) /*      bias */
+#define	SCALEP	PRMDEF_MAKEB(0,85 ,0,0) /*      scale */
+
+#if	!defined(USE_DERIVED_TYPE)
+/*       double precision PVV, EUHIV, EULOV, BIASV, SCALEV */
+/*       equivalence ( PVV    , $buf(PVP  ) ) */
+/*       equivalence ( EUHIV  , $buf(EUHIP) ) */
+/*       equivalence ( EULOV  , $buf(EULOP) ) */
+/*       equivalence ( BIASV  , $buf(BIASP) ) */
+/*       equivalence ( SCALEV , $buf(SCALEP) ) */
+#endif	
+
+
+/*         ACCUML point */
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                          1 !A!B!C!D!E!F!G!H!I!J!K!L!   M   ! */
+/*                            --------------------------------- */
+/*                          2 !       Ni      !O!P!Q!R!S!T!U!V! */
+/*                            --------------------------------- */
+/*                          3 !       Wi      !      Xi       ! */
+/*                            --------------------------------- */
+/*                          4 ! Area number                   ! */
+/*                            --------------------------------- */
+/*                        5-6 ! Create time                   ! */
+/*                             --------------------------------- */
+/*                          7 !   -   !   Ad  !   -   ! mode  ! */
+/*                            --------------------------------- */
+/*                          8 !       Alarm state map         ! */
+/*                            --------------------------------- */
+/*                       9-10 ! last time PV processed (secs) ! */
+/*                            --------------------------------- */
+/*                         11 ! last day PV processed         ! */
+/*                            --------------------------------- */
+/*                         12 !    REQERRi    !    REVERSEi   ! */
+/*                            --------------------------------- */
+/*                         13 !I!-! General Alarm ON delay    ! 0-16383 seconds */
+/*                            --------------------------------- */
+/*                         14 !I!-! Limit 1 Alarm ON delay    ! I = in delay */
+/*                            --------------------------------- */
+/*                         15 !I!-! Limit 2 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         16 !I!-! Limit 3 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         17 !I!-! Limit 4 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         18 !I!-! Limit 5 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         19 !I!-! Limit 6 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         20 !I!-! Limit 7 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         21 !I!-! Limit 8 Alarm ON delay    ! */
+/*                            --------------------------------- */
+/*                         22 !I!-! General Alarm OFF delay    ! 0-16383 seconds */
+/*                            --------------------------------- */
+/*                         23 !I!-! Limit 1 Alarm OFF delay    ! I = in delay */
+/*                            --------------------------------- */
+/*                         24 !I!-! Limit 2 Alarm OFF delay    ! */
+/*                            --------------------------------- */
+/*                         25 !I!-! Limit 3 Alarm OFF delay    ! */
+/*                            --------------------------------- */
+/*                         26 !I!-! Limit 4 Alarm OFF delay    ! */
+/*                            --------------------------------- */
+/*                         27 !I!-! Limit 5 Alarm OFF delay    ! */
+/*                            --------------------------------- */
+/*                         28 !I!-! Limit 6 Alarm OFF delay    ! */
+/*                            --------------------------------- */
+/*                         29 !I!-! Limit 7 Alarm OFF delay    ! */
+/*                            --------------------------------- */
+/*                         30 !I!-! Limit 8 Alarm OFF delay    ! */
+/*                            --------------------------------- */
+/*                         31 !   -   ! resved! resved! resved! reverse maps */
+/*                            --------------------------------- */
+/*                         32 ! dyn scn flags !       -       ! */
+/*                            --------------------------------- */
+/*                         33 !  MD Quality   !  PV Quality   ! */
+/*                            --------------------------------- */
+/*                         34 !  SP Quality   !  OP Quality   ! */
+/*                            --------------------------------- */
+/*                         35 !  A2 Quality   !  A1 Quality   ! */
+/*                            --------------------------------- */
+/*                         36 !  A4 Quality   !  A3 Quality   ! */
+/*                            --------------------------------- */
+/*                      37-40 !  PV scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      41-44 !  MD scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      45-48 !  OP scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      49-52 !  SP scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      53-56 !  A1 scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      57-60 !  A2 scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      61-64 !  A3 scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      65-68 !  A4 scanned timestamp         ! */
+/*                            --------------------------------- */
+/*                      69-72 !              pv (eu)          ! */
+/*                            --------------------------------- */
+/*                      73-76 !            100% (eu)          ! */
+/*                            --------------------------------- */
+/*                      77-78 !    accumulator raw value      ! */
+/*                            --------------------------------- */
+/*                      79-80 !  accumulator rollover value   ! */
+/*                            --------------------------------- */
+
+
+typedef struct
+    {
+    uint2 flags;          //  1 flags (as above)
+    uint2 auth;           //  2 control authorised flags
+    uint2 error;          //  3 error flags
+    uint2 area;           //  4 area number
+    uint4 createtime;     //  5 create time (C time)
+    uint2 mode;           //  7 deadmabds and mode
+    uint2 alarms;         //  8 alarm states map
+    float timelp;         //  9 time last processed (sec)
+    uint2 datelp;         // 11 date last processed (day)
+    uint2 req_rev;        // 12 request error and reverse
+    uint2 genOnDelay;     // 13 General alarm on delay (seconds)
+    uint2 al1OnDelay;     // 14 Limit 0 alarm on delay (seconds)
+    uint2 al2OnDelay;     // 15 Limit 1 alarm on delay (seconds)
+    uint2 al3OnDelay;     // 16 Limit 2 alarm on delay (seconds)
+    uint2 al4OnDelay;     // 17 Limit 3 alarm on delay (seconds)
+    uint2 al5OnDelay;     // 18 Limit 4 alarm on delay (seconds)
+    uint2 al6OnDelay;     // 19 Limit 5 alarm on delay (seconds)
+    uint2 al7OnDelay;     // 20 Limit 6 alarm on delay (seconds)
+    uint2 al8OnDelay;     // 21 Limit 7 alarm on delay (seconds)
+    uint2 genOffDelay;    // 22 General alarm off delay (seconds)
+    uint2 al1OffDelay;    // 23 Limit 0 alarm off delay (seconds)
+    uint2 al2OffDelay;    // 24 Limit 1 alarm off delay (seconds)
+    uint2 al3OffDelay;    // 25 Limit 2 alarm off delay (seconds)
+    uint2 al4OffDelay;    // 26 Limit 3 alarm off delay (seconds)
+    uint2 al5OffDelay;    // 27 Limit 4 alarm off delay (seconds)
+    uint2 al6OffDelay;    // 28 Limit 5 alarm off delay (seconds)
+    uint2 al7OffDelay;    // 29 Limit 6 alarm off delay (seconds)
+    uint2 al8OffDelay;    // 30 Limit 7 alarm off delay (seconds)
+    uint2 revmasks;       // 31 reverse masks
+    uint2 flags2;         // 32 dynamic scanning disabled flags
+    uint2 quality[4];     // 33 parameter quality
+    HSCTIME paramtimes[8];// 37 parameter scanned timestamp
+    double pv;            // 69  PV  (eu)
+    double euhi;          // 73 100% (eu)
+    int4  raw;            // 77 raw value
+    int4  rollover;       // 79 rolover value
+    } ACC_DAT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(ACC_DAT) <= (DATSZ * sizeof(int2)), "ACC_DAT struct is too large for DATSZ");
+	static_assert(sizeof(ACC_DAT) == (DATSZ_ACC * sizeof(int2)), "ACC_DAT struct is different size to DATSZ_ACC");
+#endif
+
+
+
+/*     Inherits ANA parameter definitions, these are additional. */
+
+#define	RAWP	PRMDEF_MAKEB(0,77, 0,0) /*      raw value */
+#define	ROLP	PRMDEF_MAKEB(0,79, 0,0) /*      rollover value */
+
+#if	!defined(USE_DERIVED_TYPE)
+/*       integer*4      RAWV, ROLV */
+/*       equivalence   (RAWV  , $buf(RAWP) ) */
+/*       equivalence   (ROLV  , $buf(ROLP) ) */
+#endif	
+
+
+/*         ACCESS point */
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- */
+/*                          1 !A!B!C!D!E!F!G!H!I!J!K!L!   M   ! */
+/*                            --------------------------------- */
+/*                          2 !       -       !O!P!Q!R!S!T!U!V! */
+/*                            --------------------------------- */
+/*                          3 ! AlmSup!   -   !       -     !X! */
+/*                            --------------------------------- */
+/*                          4 ! Area number                   ! */
+/*                            --------------------------------- */
+/*                        5-6 ! Create time                   ! */
+/*                             --------------------------------- */
+/*                          7 !W!CredTyp    !   !   status    ! */
+/*                            --------------------------------- */
+/*                          8 ! Entry Zone                    ! */
+/*                            --------------------------------- */
+/*                       9-10 ! last time PV processed (secs) ! */
+/*                            --------------------------------- */
+/*                         11 ! last day PV processed         ! */
+/*                            --------------------------------- */
+/*                         12 ! Exit Zone                     ! */
+/*                            --------------------------------- */
+/*                      13-16 ! card # of last card presented ! */
+/*                            --------------------------------- */
+
+
+typedef struct
+    {
+    uint2 flags;          //  1 flags (as above)
+    uint2 spare2;         //  2 not used
+    uint2 spare3;         //  3 not used
+    uint2 area;           //  4 area number
+    uint4 createtime;     //  5 create time (C time)
+    uint2 state;          //  7 access state
+    uint2 entryzone;      //  8 entry zone
+    float timelp;         //  9 time last processed (sec)
+    uint2 datelp;         // 11 date last processed (day)
+    uint2 exitzone;       // 12 exit zone
+    double lastcard;      // 13 last card present (double)
+    } ACS_DAT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(ACS_DAT) <= (DATSZ * sizeof(int2)), "ACS_DAT struct is too large for DATSZ");
+	static_assert(sizeof(ACS_DAT) == (DATSZ_ACS * sizeof(int2)), "ACS_DAT struct is different size to DATSZ_ACS");
+#endif
+
+
+
+
+#define	ACSTAA	PRMDEF_MAKEB(0, 7,15,1) /*  W - Time and Attendence reader */
+#define	CREDTYPE	PRMDEF_MAKEB(0, 7, 9,6) /*  CREDType - Prox, Mag, FingerScan, etc */
+#define	ACSSTA	PRMDEF_MAKEB(0, 7, 0,8) /*  Access state */
+/*                                                   Schlage */
+#define	AGRANT	0        /*  Granted */
+#define	ADFAC	1        /*  Denied: faciltiy code */
+#define	ADNIM	2        /*  Denied: not in memory */
+#define	ADAC	3        /*  Denied: access code */
+#define	ADTOD	4        /*  Denied: time of day */
+#define	ADPB	5        /*  Denied: passback */
+#define	AGPB	6        /*  Granted:Soft passback violation */
+#define	ADBC	7        /*  Denied: building not open */
+#define	ADURS	8        /*  DURESS */
+#define	ATRACE	9        /*  Card trace */
+#define	ADVIP	10        /*  Denied: VIP code */
+#define	APNTM	11        /*  Denied: PIN time out */
+#define	ADFRD	12        /*  Denied: deferred access key */
+#define	EGRANT	13        /*  Exit granted */
+#define	EDENY	14        /*  Exit denied */
+#define	AGAP	63        /*  Denied:PGAP Violation */
+#define	CARDTIMEOUT	104   /*  Card Timout */
+#define	ASSETGRANT	149   /*  Asset Granted */
+/*                                                   uLPM */
+#define	ATPMOAUT1	27    /*  2 Person min occupancy authorised 1 */
+#define	ATPMOAUT2	28    /*  2 Person min occupancy authorised 2 */
+#define	ASOFTERR	42    /*  Soft entry/exit error */
+#define	AESCORTED	43    /*  Authorised and escorted */
+#define	AESCORT	44    /*  Authorised escort */
+#define	AAUTH	47    /*  Authorised */
+#define	ADURESS	48    /*  Authorised under duress */
+
+#define	FS90_AGRANT	64 /*  FS90 Access Granted */
+#define	FS90_ADURESS	80 /*  FS90 Access Granted (Duress) */
+#define	FS90_DURESS_START	80 /*  Start of FS90 duress codes */
+#define	FS90_DURESS_END	95 /*  End of FS90 duress codes */
+
+
+#define	ACSENTRY	PRMDEF_MAKEB(0, 8,0,16) /*  Entry To Zone on access */
+#define	ACSEXIT	PRMDEF_MAKEB(0,12,0,16) /*  Exit From Zone on access */
+#define	LCPSTD	PRMDEF_MAKEB(0,13,0, 0) /*  Last card presented (dble) */
+
+#define	ACSALMSUP	PRMDEF_MAKEB(0, 3,12,4) /*  AlmSup - Access alarm suppression counter */
+
+
+
+/*         CDA point (and other GDA type points) */
+
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            ---------------------------------  ********************* */
+/*                          1 !A!B!C!D!E!F!G!H!I!J!K!L!   M   !  * Read Note 4       * */
+/*                            ---------------------------------  * before changing   * */
+/*                          2 !       Ni      !O!P!Q!R!S!T!U!V!  * these two fields! * */
+/*                            ---------------------------------  ********************* */
+/*                          3 !       Oi      !      Pi       ! */
+/*                            --------------------------------- */
+/*                          4 ! Area number                   ! */
+/*                            --------------------------------- */
+/*                        5-6 ! Create time                   ! */
+/*                            --------------------------------- */
+/*                        7-8 ! Modified time                 ! */
+/*                            --------------------------------- */
+/*                       9-10 ! Validate time                 ! */
+/*                            --------------------------------- */
+/*                      11-12 !      spare                    ! */
+/*                            --------------------------------- */
+
+/*                       V - questionable alarm */
+/*                       U - point built (not discovered) */
+
+#define	PRMTM	PRMDEF_MAKEB(0,7,0,0) /*  validate time */
+#define	PRVTM	PRMDEF_MAKEB(0,9,0,0) /*  validate time */
+
+
+typedef struct
+    {
+    uint2 flags;          //  1 flags (as above)
+    uint2 auth;           //  2 control authorised flags
+    uint2 error;          //  3 error flags
+    uint2 area;           //  4 area number
+    uint4 createtime;     //  5 create time (C time)
+    uint4 modifiedtime;   //  7 modified time (C time)
+    uint4 validatetime;   //  9 validate time (C time)
+    uint2 spare11;
+    uint2 spare12;
+    } CDA_DAT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(CDA_DAT) <= (DATSZ * sizeof(int2)), "CDA_DAT struct is too large for DATSZ");
+	static_assert(sizeof(CDA_DAT) == (DATSZ_CDA * sizeof(int2)), "CDA_DAT struct is different size to DATSZ_CDA");
+#endif
+
+
+
+
+
+/*         ASH point (and other hierarchy points) */
+
+/*                             5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                            --------------------------------- ********************* */
+/*                          1 !A!B!C!D!E!F!G!H!I!J!K!L!   M   ! * Read Note 4       * */
+/*                            --------------------------------- * before changing   * */
+/*                          2 !       Ni      !O!P!Q!R!S!T!U!V! * these two fields! * */
+/*                            --------------------------------- ********************* */
+/*                          3 !       Oi      !      Pi       ! */
+/*                            --------------------------------- */
+/*                          4 ! Area number                   ! */
+/*                            --------------------------------- */
+/*                        5-6 ! Create time                   ! */
+/*                            --------------------------------- */
+/*                        7-8 ! Modified time                 ! */
+/*                            --------------------------------- */
+/*                       9-10 ! Validate time                 ! */
+/*                            --------------------------------- */
+/*                      11-12 !      spare                    ! */
+/*                            --------------------------------- */
+
+
+typedef struct
+    {
+    uint2 flags;          //  1 flags (as above)
+    uint2 auth;           //  2 control authorised flags
+    uint2 error;          //  3 error flags
+    uint2 area;           //  4 area number
+    uint4 createtime;     //  5 create time (C time)
+    uint4 modifiedtime;   //  7 modified time (C time)
+    uint4 validatetime;   //  9 validate time (C time)
+    uint2 spare11;
+    uint2 spare12;
+    } ASH_DAT;
+
+#ifdef __cplusplus
+	static_assert(sizeof(ASH_DAT) <= (DATSZ * sizeof(int2)), "ASH_DAT struct is too large for DATSZ");
+	static_assert(sizeof(ASH_DAT) == (DATSZ_ASH * sizeof(int2)), "ASH_DAT struct is different size to DATSZ_ASH");
+#endif
+
+
+
+#endif	

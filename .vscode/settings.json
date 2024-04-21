@@ -1,0 +1,6 @@
+{
+    "code-runner.customCommand": "Msbuild hwoxcol.sln /t:Build /p:Configuration=Debug",
+    "files.associations": {
+        "util.h": "c"
+    },
+}

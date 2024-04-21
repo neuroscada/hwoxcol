@@ -1,0 +1,242 @@
+
+/*                             MSGDIR - message directory */
+/*                             -------------------------- */
+
+/*     REVISION: */
+/*         @(#)msgdir_def	main.SVR_MASTERPROJ_Integration.1 */
+
+
+#if	!defined(MSGDSZ)
+/*       integer*2  MSGDSZ */
+#define	MSGDSZ	40	    /*  must be even so as to maintain */
+/*                                  ;* 32 bit allignment of pointers. */
+#if	!defined( inside_IDL )
+
+/*         MSGDIR has a queue structure. There are two headers of */
+/*         length 6 words as follows, one for the free queue, one for */
+/*         active messages. The next record after the headers */
+/*         is the first data record. */
+
+/*                 word 1,2 - head pointer */
+/*                      3,4 - tail pointer */
+/*                        5 - lock */
+/*                        6 - length counter */
+
+
+/*         Other records: as defined below */
+
+/*                                            5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 */
+/*                                           --------------------------------- */
+/*                                       1,2 !  pointer to next frame        ! */
+/*                                           --------------------------------- */
+/*                                         3 !       frame priority          ! */
+/*        integer*2  MSG_AREA        ;*        --------------------------------- */
+#define	MSG_AREA	4	 /*       4 !       area                    ! */
+/*        integer*2  MSG_POINT       ;*        --------------------------------- */
+#define	MSG_POINT	5	 /*     5,6 !       point                   ! */
+/*        integer*2  MSG_PARAM       ;*        --------------------------------- */
+#define	MSG_PARAM	7	 /*       7 !       param                   ! */
+/*        integer*2  MSG_EE          ;*        --------------------------------- */
+#define	MSG_EE	8	 /*       8 !       ee                      ! */
+/*        integer*2  MSG_BB          ;*        --------------------------------- */
+#define	MSG_BB	9	 /*    9,10 !       bb                      ! */
+/*        integer*2  MSG_CNFRTU      ;*        --------------------------------- */
+#define	MSG_CNFRTU	11	 /*      11 !       confirm rtu             ! */
+/*        integer*2  MSG_CNFADD      ;*        --------------------------------- */
+#define	MSG_CNFADD	12	 /*      12 !       confirm address         ! */
+/*        integer*2  MSG_CNFVAL      ;*        --------------------------------- */
+#define	MSG_CNFVAL	13	 /*   13,16 !       confirm value           ! */
+/*        integer*2  MSG_CNFLRN      ;*        --------------------------------- */
+#define	MSG_CNFLRN	17	 /*      17 !       confirm lrn             ! */
+/*        integer*2  MSG_CNFTYPE     ;*        --------------------------------- */
+#define	MSG_CNFTYPE	18	 /*      18 !       confirm type            ! */
+/*        integer*2  MSG_SUBTYPE     ;*        --------------------------------- */
+#define	MSG_SUBTYPE	19	 /*      19 !       subtype                 ! */
+/*                                   ;*        --------------------------------- */
+/*                                   ;*  20,24 !       spare20                 ! */
+/*        integer*2  MSG_COK         ;*        --------------------------------- */
+#define	MSG_COK	25	 /*   25,26 !       server supplied cookie  ! */
+/*        integer*2  MSG_GEN_COK     ;*        --------------------------------- */
+#define	MSG_GEN_COK	27	 /*   27,28 !       generated cookie        ! */
+/*        integer*2  MSG_TIME        ;*        --------------------------------- */
+#define	MSG_TIME	29	 /*   29,32 !       time (HSCTIME)          ! */
+/*        integer*2  MSG_FLAG        ;*        --------------------------------- */
+#define	MSG_FLAG	33	 /*      33 !A!B!C! D !E!F!G! H !I!J!K!L!M!N! */
+/*        integer*2  MSG_STRDQUAL    ;*        --------------------------------- */
+#define	MSG_STRDQUAL	34	/*      34 !       stored quality          ! */
+/*        integer*2  MSG_PARENT      ;*        --------------------------------- */
+#define	MSG_PARENT	35	 /*   35,36 !       parent point number     ! */
+/*                                   ;*        --------------------------------- */
+/*                                   ;*     37 !       spare37                 ! */
+/*        integer*2  MSG_ORGAREA     ;*        --------------------------------- */
+#define	MSG_ORGAREA	38	 /*      38 !       original area           ! */
+/*        integer*2  MSG_ORGPARENT   ;*        --------------------------------- */
+#define	MSG_ORGPARENT	39	/*  39,40 !       original parent         ! */
+/*                                           --------------------------------- */
+
+
+/*				Frame Priorities */
+
+/*       integer*2  MSG_FP_FREE, MSG_FP_MSG */
+#define	MSG_FP_FREE	0	
+#define	MSG_FP_MSG	1	
+
+
+/*				A - acknowledged */
+/*       integer*2 MSG_ACKED_MASK, MSG_ACKED, MSG_ACKED_BIT */
+#define	MSG_ACKED_MASK	0x8000		      /*   field mask */
+#define	MSG_ACKED	0x8000		      /*   acknowledged */
+#define	MSG_ACKED_BIT	15     	      /*   bit number */
+
+/*				B - confirmed */
+/*       integer*2 MSG_CONFIRM_MASK, MSG_CONFIRM, MSG_CONFIRM_BIT */
+#define	MSG_CONFIRM_MASK	0x4000		      /*   field mask */
+#define	MSG_CONFIRM	0x4000		      /*   confirmed */
+#define	MSG_CONFIRM_BIT	14     	      /*   bit number */
+
+/*				C - questionable */
+/*       integer*2 MSG_QUESTIONABLE_MASK, MSG_QUESTIONABLE, MSG_QUESTIONABLE_BIT */
+#define	MSG_QUESTIONABLE_MASK	0x2000		      /*   field mask */
+#define	MSG_QUESTIONABLE	0x2000		      /*   questionable */
+#define	MSG_QUESTIONABLE_BIT	13     	      /*   bit number */
+
+/*				D - message type */
+/*       integer*2 MSG_TYPE_MASK, MSG_TYPE_OFFSET, MSG_TYPE_WIDTH */
+#define	MSG_TYPE_MASK	0x1800		      /*   field mask */
+#define	MSG_TYPE_OFFSET	11     	      /*   offset */
+#define	MSG_TYPE_WIDTH	2      	      /*   width */
+
+
+/*       integer*2 MSG_TYPE_POINT_ALARM,MSG_TYPE_TDC,MSG_TYPE_TPS,MSG_TYPE_INVALID */
+#define	MSG_TYPE_POINT_ALARM	0x0800		      /*   point alarm message */
+#define	MSG_TYPE_TDC	0x1000		      /*   TDC message */
+#define	MSG_TYPE_TPS	0x1800		      /*   TPS message */
+#define	MSG_TYPE_INVALID	0x0000		      /*   Invalid message type */
+
+/*				E - message is confirmable */
+/*       integer*2 MSG_CONFIRMABLE_MASK, MSG_CONFIRMABLE, MSG_CONFIRMABLE_BIT */
+#define	MSG_CONFIRMABLE_MASK	0x0400		      /*   field mask */
+#define	MSG_CONFIRMABLE	0x0400		      /*   confirmable */
+#define	MSG_CONFIRMABLE_BIT	10     	      /*   bit number */
+
+/*			        F - message should not be published ie local only */
+/*       integer*2 MSG_LOCALONLY_MASK, MSG_LOCALONLY, MSG_LOCALONLY_BIT */
+#define	MSG_LOCALONLY_MASK	0x0200		      /*   field mask */
+#define	MSG_LOCALONLY	0x0200		      /*   message is local only */
+#define	MSG_LOCALONLY_BIT	9     	      /*   bit number */
+
+/*                               G - message has been synced by dsnotifsync */
+/*       integer*2 MSG_SYNCED_MASK, MSG_SYNCED, MSG_SYNCED_BIT */
+#define	MSG_SYNCED_MASK	0x0100		      /*   field mask */
+#define	MSG_SYNCED	0x0100		      /*   message has been synced by dsnotifsync */
+#define	MSG_SYNCED_BIT	8     	      /*   bit number */
+
+/*			        H - number of signatures */
+/*       integer*2 MSG_NUM_SIGS_MASK, MSG_NUM_SIGS, MSG_NUM_SIGS_OFFSET,MSG_NUM_SIGS_WIDTH */
+#define	MSG_NUM_SIGS_MASK	0x00C0		      /*   number of signatures required (0-3) */
+#define	MSG_NUM_SIGS_OFFSET	6     	      /*   offset */
+#define	MSG_NUM_SIGS_WIDTH	2     	      /*   field width */
+
+/*                               I - message was generated by server scripting */
+/*       integer*2 MSG_SCRIPTED_MASK, MSG_SCRIPTED, MSG_SCRIPTED_BIT */
+#define	MSG_SCRIPTED_MASK	0x0020		      /*   field mask */
+#define	MSG_SCRIPTED	0x0020		      /*   message has been generated by server scripting */
+#define	MSG_SCRIPTED_BIT	5     	      /*   bit number */
+
+/*                               J - message was mapped from a simple OPC event */
+/*       integer*2 MSG_SIMPLE_MASK, MSG_SIMPLE, MSG_SIMPLE_BIT */
+#define	MSG_SIMPLE_MASK	0x0010		      /*   field mask */
+#define	MSG_SIMPLE	0x0010		      /*   message was mapped from a simple OPC event */
+#define	MSG_SIMPLE_BIT	4     	      /*   bit number */
+
+/*                               K - message generated on server so don't recover */
+/*       integer*2 MSG_SERVERGEN_MASK, MSG_SERVERGEN, MSG_SERVERGEN_BIT */
+#define	MSG_SERVERGEN_MASK	0x0008		    /*   field mask */
+#define	MSG_SERVERGEN	0x0008		    /*   message was generated on server */
+#define	MSG_SERVERGEN_BIT	3     	    /*   bit number */
+
+/*                               L - cleared */
+/*       integer*2 MSG_CLEARED_MASK, MSG_CLEARED, MSG_CLEARED_BIT */
+#define	MSG_CLEARED_MASK	0x0004		    /*   field mask */
+#define	MSG_CLEARED	0x0004		    /*   message was cleared */
+#define	MSG_CLEARED_BIT	2     	    /*   bit number */
+
+/*                               M - clear required, needed for DSA support */
+/*       integer*2 MSG_CLEAR_REQUIRED_MASK, MSG_CLEAR_REQUIRED, MSG_CLEAR_REQUIRED_BIT */
+#define	MSG_CLEAR_REQUIRED_MASK	0x0002		      /*   field mask */
+#define	MSG_CLEAR_REQUIRED	0x0002		      /*   this message requires a manual clear */
+#define	MSG_CLEAR_REQUIRED_BIT	1     	      /*   bit number */
+
+/*                               N - message should not be published to dsa clients (ie cluster only) */
+/*       integer*2 MSG_CLUSTERONLY_MASK, MSG_CLUSTERONLY, MSG_CLUSTERONLY_BIT */
+#define	MSG_CLUSTERONLY_MASK	0x0001		      /*   field mask */
+#define	MSG_CLUSTERONLY	0x0001		      /*   message is cluster only */
+#define	MSG_CLUSTERONLY_BIT	0     	      /*   bit number */
+
+/*				TDC MESSAGE */
+
+
+/*         Confirmation takes the form of a control request where the data */
+/*         used to form that control request is stored in the message with */
+/*         fields of the form msg_cnfxxx.  The request is sent to the 'return lrn'. */
+
+
+/*       TPS messsage (also CDA) */
+
+
+/*         Confirmation takes the form of a parameter write. */
+
+
+
+/* Fortran Derived Types - There are currently no user of this, so to avoid having to keep the Derived type alligned */
+/*			    with the c struct and the fortran defs, it is simple defined as a buffer */
+
+	struct t_msgdir {
+		/* sequence */
+		int2   buf[MSGDSZ];
+	};
+
+
+
+
+
+
+
+struct msgdir
+{
+    int2    msg_idx[INT4_SZ];
+    int2    msg_framepri;
+    int2    msg_area;
+    PNTNUM  msg_point;
+    PRMNUM  msg_param;
+    uint2   msg_ee;
+    uint4   msg_bb;
+    uint2   msg_cnfrtu;
+    uint2   msg_cnfadd;
+    double  msg_cnfval;
+    uint2   msg_cnflrn;
+    uint2   msg_cnftype;
+    int2    msg_subtype;
+    int2    msg_spare20[25-20];
+    int2    msg_cookie[2];
+    int2    msg_gen_cookie[2];
+    HSCTIME msg_time;
+    int2    msg_flag;
+    int2    storedquality;
+    PNTNUM  msg_parent;
+    int2    msg_spare37;
+    uint2   msg_orgarea;
+    PNTNUM  msg_orgparent;
+};
+
+typedef struct msgdir    MSGDIR;
+typedef struct msgdir * PMSGDIR;
+
+  /*	PROTOTYPES  */
+EXTERN_C void   hsc_que_msg(int2*,char*,char*);
+EXTERN_C PNTNUM hsc_set_msg_pointnum(PNTNUM nPoint, int2 nConnection, int2 nOrgConnection, PNTNUM *pnParent);
+EXTERN_C PNTNUM hsc_get_msg_pointnum(struct msgdir *pmsgdir);
+
+#endif	
+#endif	
+
